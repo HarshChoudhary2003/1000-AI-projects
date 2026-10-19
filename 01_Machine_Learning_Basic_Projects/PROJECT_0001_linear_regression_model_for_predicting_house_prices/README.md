@@ -73,8 +73,13 @@ pip install -r requirements.txt
 
 ### 2. Run Implementation
 ```bash
+# Run terminal script
 python main.py
+
+# Launch interactive Streamlit Web UI
+streamlit run app.py
 ```
+
 
 ---
 
