@@ -227,4 +227,4 @@ with st.expander("Inspect Raw Test Set & Predictions"):
     results_df["Actual"] = y_test
     results_df["Predicted_Probability"] = np.round(test_probs, 4)
     results_df["Predicted_Class"] = y_pred_thresh
-    st.dataframe(results_df, use_container_width=True)
+    st.dataframe(results_df, width="stretch")

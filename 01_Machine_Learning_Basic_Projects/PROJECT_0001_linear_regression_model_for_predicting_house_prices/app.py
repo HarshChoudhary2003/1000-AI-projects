@@ -143,5 +143,5 @@ with col_info:
 with st.expander("View Underlying Sales Comps"):
     st.dataframe(
         DEFAULT_DATA.rename(columns={"area_sqft": "Living Area (sq.ft)", "price_k": "Sale Price ($1000s)"}),
-        use_container_width=True
+        width="stretch"
     )
