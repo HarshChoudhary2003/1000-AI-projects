@@ -137,9 +137,16 @@ Selected projects include interactive **Streamlit web applications** featuring l
 
 * 🏡 **[Project 0001: House Price Valuation Dashboard](01_Machine_Learning_Basic_Projects/PROJECT_0001_linear_regression_model_for_predicting_house_prices/app.py)**  
   * Real-time property parameter sliders (Square Footage, Presets)
-  * Live regression line + confidence envelope ($\pm 1	ext{ RMSE}$)
+  * Live regression line + confidence envelope ($\pm 1\text{ RMSE}$)
   * Dynamic price-per-square-foot valuation metrics
   * *Run with:* `streamlit run 01_Machine_Learning_Basic_Projects/PROJECT_0001_linear_regression_model_for_predicting_house_prices/app.py`
+
+* ⚖️ **[Project 0002: Logistic Regression Decision Dashboard](01_Machine_Learning_Basic_Projects/PROJECT_0002_logistic_regression_for_binary_classification/app.py)**  
+  * Real-time classification threshold tuning ($\tau \in [0.05, 0.95]$) with dynamic Confusion Matrix
+  * Live ROC curve with highlighted operating threshold point
+  * Feature log-odds & odds ratios ($e^\beta$) horizontal weight chart
+  * Single-instance live probability scorer with visual risk badge
+  * *Run with:* `streamlit run 01_Machine_Learning_Basic_Projects/PROJECT_0002_logistic_regression_for_binary_classification/app.py`
 
 ---
 
@@ -153,7 +160,8 @@ Selected projects include interactive **Streamlit web applications** featuring l
 | # | Project Title | Difficulty | Executable Assets |
 |---|---|:---:|:---|
 | 0001 | [Linear regression model for predicting house prices](01_Machine_Learning_Basic_Projects/PROJECT_0001_linear_regression_model_for_predicting_house_prices/README.md) | `Beginner` | [🐍 Script](01_Machine_Learning_Basic_Projects/PROJECT_0001_linear_regression_model_for_predicting_house_prices/main.py) • [📓 Notebook](01_Machine_Learning_Basic_Projects/PROJECT_0001_linear_regression_model_for_predicting_house_prices/notebook.ipynb) • [🌐 Web App](01_Machine_Learning_Basic_Projects/PROJECT_0001_linear_regression_model_for_predicting_house_prices/app.py) |
-| 0002 | [Logistic regression for binary classification](01_Machine_Learning_Basic_Projects/PROJECT_0002_logistic_regression_for_binary_classification/README.md) | `Beginner` | [🐍 Script](01_Machine_Learning_Basic_Projects/PROJECT_0002_logistic_regression_for_binary_classification/main.py) • [📓 Notebook](01_Machine_Learning_Basic_Projects/PROJECT_0002_logistic_regression_for_binary_classification/notebook.ipynb) |
+| 0002 | [Logistic regression for binary classification](01_Machine_Learning_Basic_Projects/PROJECT_0002_logistic_regression_for_binary_classification/README.md) | `Beginner` | [🐍 Script](01_Machine_Learning_Basic_Projects/PROJECT_0002_logistic_regression_for_binary_classification/main.py) • [📓 Notebook](01_Machine_Learning_Basic_Projects/PROJECT_0002_logistic_regression_for_binary_classification/notebook.ipynb) • [🌐 Web App](01_Machine_Learning_Basic_Projects/PROJECT_0002_logistic_regression_for_binary_classification/app.py) |
+
 | 0003 | [K-means clustering for customer segmentation](01_Machine_Learning_Basic_Projects/PROJECT_0003_k_means_clustering_for_customer_segmentation/README.md) | `Beginner` | [🐍 Script](01_Machine_Learning_Basic_Projects/PROJECT_0003_k_means_clustering_for_customer_segmentation/main.py) • [📓 Notebook](01_Machine_Learning_Basic_Projects/PROJECT_0003_k_means_clustering_for_customer_segmentation/notebook.ipynb) |
 | 0004 | [Decision tree classifier for Iris dataset](01_Machine_Learning_Basic_Projects/PROJECT_0004_decision_tree_classifier_for_iris_dataset/README.md) | `Beginner` | [🐍 Script](01_Machine_Learning_Basic_Projects/PROJECT_0004_decision_tree_classifier_for_iris_dataset/main.py) • [📓 Notebook](01_Machine_Learning_Basic_Projects/PROJECT_0004_decision_tree_classifier_for_iris_dataset/notebook.ipynb) |
 | 0005 | [Simple neural network from scratch](01_Machine_Learning_Basic_Projects/PROJECT_0005_simple_neural_network_from_scratch/README.md) | `Beginner` | [🐍 Script](01_Machine_Learning_Basic_Projects/PROJECT_0005_simple_neural_network_from_scratch/main.py) • [📓 Notebook](01_Machine_Learning_Basic_Projects/PROJECT_0005_simple_neural_network_from_scratch/notebook.ipynb) |
