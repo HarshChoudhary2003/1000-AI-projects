@@ -18,31 +18,31 @@ GITHUB_BASE = f"https://github.com/{REPO_OWNER}/{REPO_NAME}/tree/main"
 COLAB_BASE = f"https://colab.research.google.com/github/{REPO_OWNER}/{REPO_NAME}/blob/main"
 
 CATEGORY_COLORS = {
-    1: "#3B82F6",   # ML Basics - Blue
-    2: "#0284C7",   # ML Intermediate - Sky
-    3: "#8B5CF6",   # DL Basics - Purple
-    4: "#7C3AED",   # DL Intermediate - Violet
-    5: "#EC4899",   # NLP - Pink
-    6: "#10B981",   # Computer Vision - Emerald
-    7: "#F59E0B",   # Reinforcement Learning - Amber
-    8: "#F97316",   # Time Series - Orange
-    9: "#6366F1",   # Recommendation - Indigo
-    10: "#A855F7",  # Generative Models - Fuchsia
-    11: "#14B8A6",  # GNNs - Teal
-    12: "#EF4444",  # Healthcare - Red
-    13: "#84CC16",  # Finance - Lime
-    14: "#D946EF",  # NLP Advanced - Magenta
-    15: "#06B6D4",  # CV Advanced - Cyan
-    16: "#EAB308",  # RL Advanced - Yellow
-    17: "#64748B",  # Robotics - Slate
-    18: "#F43F5E",  # Audio/Speech - Rose
-    19: "#8B5CF6",  # Explainable AI - Purple
-    20: "#0D9488",  # Edge AI - Dark Teal
-    21: "#3B82F6",  # Business - Blue
-    22: "#22C55E",  # Environmental - Green
-    23: "#DC2626",  # Security - Crimson
-    24: "#9333EA",  # Multi-modal - Purple
-    25: "#4F46E5",  # Meta & Hybrid - Indigo
+    1: "#F59E0B",   # ML Basics - Warm Amber Gold
+    2: "#D97706",   # ML Intermediate - Deep Ochre
+    3: "#3B82F6",   # DL Basics - Sapphire Blue
+    4: "#2563EB",   # DL Intermediate - Cobalt
+    5: "#0D9488",   # NLP - Sage Teal
+    6: "#059669",   # Computer Vision - Emerald
+    7: "#C2410C",   # Reinforcement Learning - Terracotta
+    8: "#B45309",   # Time Series - Bronze
+    9: "#4F46E5",   # Recommendation Systems - Slate Indigo
+    10: "#7C3AED",  # Generative Models - Deep Amethyst
+    11: "#0891B2",  # GNNs - Nordic Cyan
+    12: "#E11D48",  # Healthcare - Crimson Coral
+    13: "#15803D",  # Finance - British Racing Green
+    14: "#0F766E",  # NLP Advanced - Deep Teal
+    15: "#0284C7",  # CV Advanced - Slate Azure
+    16: "#EA580C",  # RL Advanced - Warm Rust
+    17: "#64748B",  # Robotics - Titanium Slate
+    18: "#BE123C",  # Audio/Speech - Burgundy Rose
+    19: "#6D28D9",  # Explainable AI - Imperial Violet
+    20: "#047857",  # Edge AI - Forest Green
+    21: "#1D4ED8",  # Business - Royal Cobalt
+    22: "#16A34A",  # Environmental - Natural Green
+    23: "#B91C1C",  # Security - Deep Carmine
+    24: "#7E22CE",  # Multi-modal - Royal Purple
+    25: "#374151",  # Meta & Hybrid - Graphite Metal
 }
 
 CATEGORY_ICONS = {

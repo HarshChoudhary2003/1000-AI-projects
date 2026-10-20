@@ -182,7 +182,7 @@ function render() {
         <div style="font-size: 3.5rem; margin-bottom: 16px;">🔍</div>
         <h3 style="font-size: 1.4rem; margin-bottom: 8px; color: #fff;">No matching projects found</h3>
         <p style="color: #94A3B8; max-width: 450px; margin: 0 auto 24px;">Try searching for another keyword, clearing the filters, or switching categories.</p>
-        <button class="btn-open-modal" style="background: var(--accent-indigo); color: #fff;" onclick="resetFilters()">Reset All Filters</button>
+        <button class="btn-open-modal" style="background: var(--accent-gold); color: #000; font-weight: 700;" onclick="resetFilters()">Reset All Filters</button>
       </div>
     `;
     DOM.paginationWrapper.innerHTML = '';
@@ -404,7 +404,7 @@ function openProjectModal(projectId) {
     
     <!-- Quick Action Launchers -->
     <div style="display: flex; flex-wrap: wrap; gap: 12px; margin-top: 26px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.08);">
-      <a href="${p.github_url}" target="_blank" rel="noopener noreferrer" class="btn-open-modal" style="background: var(--accent-indigo); color: #fff; padding: 10px 20px;">
+      <a href="${p.github_url}" target="_blank" rel="noopener noreferrer" class="btn-open-modal" style="background: var(--accent-gold); color: #000; font-weight: 700; padding: 10px 20px;">
         💻 View Source on GitHub
       </a>
       ${p.has_notebook ? `
