@@ -1,6 +1,7 @@
 /**
- * 1000 AI Projects Showcase Portal
- * Pure ES6 Client-side Engine: Instant Search, Multi-Filter, Pagination, Modals
+ * 1,000 AI Projects Showcase Portal
+ * Senior Staff Developer Engine: Instant Client Search, Domain Carousel,
+ * Grid/Table View Switching, Terminal Window Modal, and Toast Notification System.
  */
 
 const STATE = {
@@ -13,6 +14,7 @@ const STATE = {
   selectedDifficulty: 'all',
   onlyInteractive: false,
   sortBy: 'id_asc',
+  viewMode: 'grid', // 'grid' | 'table'
   currentPage: 1,
   pageSize: 24
 };
@@ -20,21 +22,27 @@ const STATE = {
 // DOM References
 const DOM = {
   searchInput: document.getElementById('searchInput'),
+  searchClearBtn: document.getElementById('searchClearBtn'),
   categorySelect: document.getElementById('categorySelect'),
   difficultySelect: document.getElementById('difficultySelect'),
   onlyInteractiveToggle: document.getElementById('onlyInteractiveToggle'),
   sortSelect: document.getElementById('sortSelect'),
+  domainCarousel: document.getElementById('domainCarousel'),
   resultsCount: document.getElementById('resultsCount'),
-  projectsGrid: document.getElementById('projectsGrid'),
+  projectsContainer: document.getElementById('projectsContainer'),
   paginationWrapper: document.getElementById('paginationWrapper'),
-  quickPills: document.getElementById('quickPills'),
   statTotal: document.getElementById('statTotal'),
   statCategories: document.getElementById('statCategories'),
   statApps: document.getElementById('statApps'),
   modalOverlay: document.getElementById('modalOverlay'),
   modalCard: document.getElementById('modalCard'),
+  modalTitleBar: document.getElementById('modalTitleBar'),
   modalClose: document.getElementById('modalClose'),
-  modalBody: document.getElementById('modalBody')
+  modalBody: document.getElementById('modalBody'),
+  toastNotice: document.getElementById('toastNotice'),
+  toastMsg: document.getElementById('toastMsg'),
+  viewGridBtn: document.getElementById('viewGridBtn'),
+  viewListBtn: document.getElementById('viewListBtn')
 };
 
 // Initialize Application
@@ -50,15 +58,16 @@ async function init() {
     STATE.filteredProjects = [...STATE.allProjects];
     
     updateStatsHeader();
+    renderDomainCarousel();
     populateCategoryDropdown();
     attachEventListeners();
     applyFilters();
   } catch (err) {
     console.error('Failed to load projects.json:', err);
-    DOM.projectsGrid.innerHTML = `
-      <div style="grid-column: 1 / -1; text-align: center; padding: 60px 20px;">
-        <h3 style="color: #EF4444; margin-bottom: 12px;">⚠️ Failed to load projects data</h3>
-        <p style="color: #94A3B8;">Please ensure <code>projects.json</code> exists in the same directory.</p>
+    DOM.projectsContainer.innerHTML = `
+      <div style="text-align: center; padding: 60px 20px;">
+        <h3 style="color: #EF4444; margin-bottom: 12px; font-size: 1.4rem;">⚠️ Failed to load projects data</h3>
+        <p style="color: #94A3B8;">Please ensure <code>projects.json</code> is accessible in the same directory.</p>
       </div>
     `;
   }
@@ -74,7 +83,32 @@ function updateStatsHeader() {
   }
 }
 
-// Populate Category Filter
+// Render Domain Carousel Pills
+function renderDomainCarousel() {
+  if (!DOM.domainCarousel) return;
+  
+  let html = `
+    <button class="domain-pill active" data-cat="all">
+      <span>🚀</span>
+      <span>All 1,000 Projects</span>
+      <span class="domain-pill-count">${STATE.allProjects.length}</span>
+    </button>
+  `;
+  
+  STATE.categories.forEach(cat => {
+    html += `
+      <button class="domain-pill" data-cat="${cat.id}" style="--cat-color: ${cat.color};">
+        <span>${cat.icon}</span>
+        <span>${cat.name}</span>
+        <span class="domain-pill-count">${cat.count}</span>
+      </button>
+    `;
+  });
+  
+  DOM.domainCarousel.innerHTML = html;
+}
+
+// Populate Category Filter Dropdown
 function populateCategoryDropdown() {
   if (!DOM.categorySelect) return;
   DOM.categorySelect.innerHTML = `<option value="all">All 25 AI Domains (${STATE.allProjects.length})</option>`;
@@ -129,7 +163,6 @@ function applyFilters() {
     if (STATE.sortBy === 'id_asc') return a.num - b.num;
     if (STATE.sortBy === 'id_desc') return b.num - a.num;
     if (STATE.sortBy === 'title_asc') return a.title.localeCompare(b.title);
-    if (STATE.sortBy === 'title_desc') return b.title.localeCompare(a.title);
     if (STATE.sortBy === 'cat_asc') return a.cat_id - b.cat_id || a.num - b.num;
     return 0;
   });
@@ -138,44 +171,104 @@ function applyFilters() {
   render();
 }
 
-// Render Project Grid & Pagination
+// Render Project Grid or Table
 function render() {
   const total = STATE.filteredProjects.length;
   DOM.resultsCount.innerHTML = `Showing <b>${total}</b> of <b>${STATE.allProjects.length}</b> projects`;
   
   if (total === 0) {
-    DOM.projectsGrid.innerHTML = `
-      <div style="grid-column: 1 / -1; text-align: center; padding: 80px 20px;">
-        <div style="font-size: 3rem; margin-bottom: 14px;">🔍</div>
-        <h3 style="font-size: 1.3rem; margin-bottom: 8px; color: #fff;">No matching projects found</h3>
-        <p style="color: #94A3B8; max-width: 450px; margin: 0 auto 20px;">Try adjusting your keyword search, clearing filters, or switching categories.</p>
-        <button class="btn-primary" onclick="resetFilters()">Reset All Filters</button>
+    DOM.projectsContainer.innerHTML = `
+      <div style="text-align: center; padding: 80px 20px; background: rgba(15,23,42,0.4); border-radius: 16px; border: 1px dashed rgba(255,255,255,0.1);">
+        <div style="font-size: 3.5rem; margin-bottom: 16px;">🔍</div>
+        <h3 style="font-size: 1.4rem; margin-bottom: 8px; color: #fff;">No matching projects found</h3>
+        <p style="color: #94A3B8; max-width: 450px; margin: 0 auto 24px;">Try searching for another keyword, clearing the filters, or switching categories.</p>
+        <button class="btn-open-modal" style="background: var(--accent-indigo); color: #fff;" onclick="resetFilters()">Reset All Filters</button>
       </div>
     `;
     DOM.paginationWrapper.innerHTML = '';
     return;
   }
   
-  // Calculate Pagination Slice
+  // Pagination Slice
   const startIdx = (STATE.currentPage - 1) * STATE.pageSize;
   const endIdx = Math.min(startIdx + STATE.pageSize, total);
   const pageItems = STATE.filteredProjects.slice(startIdx, endIdx);
   
-  DOM.projectsGrid.innerHTML = pageItems.map(p => createCardHTML(p)).join('');
+  if (STATE.viewMode === 'table') {
+    renderTableView(pageItems);
+  } else {
+    renderGridView(pageItems);
+  }
+  
   renderPagination(total);
+}
+
+// Render Card Grid
+function renderGridView(items) {
+  DOM.projectsContainer.innerHTML = `
+    <div class="projects-grid">
+      ${items.map(p => createCardHTML(p)).join('')}
+    </div>
+  `;
+}
+
+// Render High-Density Table
+function renderTableView(items) {
+  DOM.projectsContainer.innerHTML = `
+    <div style="overflow-x: auto;">
+      <table class="projects-table-view">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Project Title</th>
+            <th>Domain Category</th>
+            <th>Difficulty</th>
+            <th>Assets</th>
+            <th style="text-align: right;">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${items.map(p => {
+            const numStr = `#${p.num.toString().padStart(4, '0')}`;
+            return `
+              <tr onclick="openProjectModal('${p.id}')">
+                <td><span class="card-num-badge">${numStr}</span></td>
+                <td><b style="color: #fff;">${escapeHTML(p.title)}</b></td>
+                <td>
+                  <span class="card-cat-badge" style="color:${p.cat_color}; background:${p.cat_color}18; border: 1px solid ${p.cat_color}33;">
+                    ${p.cat_icon} ${p.cat_name}
+                  </span>
+                </td>
+                <td><span style="font-size: 0.8rem; color: #CBD5E1;">${p.diff}</span></td>
+                <td>
+                  <div style="display: flex; gap: 6px;">
+                    ${p.has_app ? '<span class="badge-asset has-studio" title="Streamlit Web Studio">🌐 Studio</span>' : ''}
+                    <span class="badge-asset">🐍 CLI</span>
+                    ${p.has_notebook ? '<span class="badge-asset">📓 Colab</span>' : ''}
+                  </div>
+                </td>
+                <td style="text-align: right;">
+                  <button class="btn-open-modal" onclick="event.stopPropagation(); openProjectModal('${p.id}')">
+                    Inspect ➔
+                  </button>
+                </td>
+              </tr>
+            `;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
 }
 
 // Generate Card HTML
 function createCardHTML(p) {
   const numStr = `#${p.num.toString().padStart(4, '0')}`;
-  const diffClass = p.diff.toLowerCase().includes('beginner') ? 'diff-beginner' : 
-                   (p.diff.toLowerCase().includes('intermediate') ? 'diff-intermediate' : 'diff-advanced');
-                   
   return `
     <div class="project-card" data-project-id="${p.id}">
-      <div class="card-header">
-        <span class="project-id-badge">${numStr}</span>
-        <span class="category-chip" style="color:${p.cat_color}; background:${p.cat_color}18; border: 1px solid ${p.cat_color}33;">
+      <div class="card-top">
+        <span class="card-num-badge">${numStr}</span>
+        <span class="card-cat-badge" style="color:${p.cat_color}; background:${p.cat_color}18; border: 1px solid ${p.cat_color}33;">
           ${p.cat_icon} ${p.cat_name}
         </span>
       </div>
@@ -183,22 +276,22 @@ function createCardHTML(p) {
       <h3 class="card-title" onclick="openProjectModal('${p.id}')">${escapeHTML(p.title)}</h3>
       <p class="card-desc">${escapeHTML(p.desc)}</p>
       
-      <div class="card-assets">
-        ${p.has_app ? '<span class="asset-badge app-ready">🌐 Live Web App</span>' : ''}
-        ${p.has_script ? '<span class="asset-badge">🐍 CLI Script</span>' : ''}
-        ${p.has_notebook ? '<span class="asset-badge">📓 Colab Notebook</span>' : ''}
+      <div class="card-badges-row">
+        ${p.has_app ? '<span class="badge-asset has-studio"><span class="pulse-green"></span> Live Web Studio</span>' : ''}
+        ${p.has_script ? '<span class="badge-asset">🐍 Python CLI</span>' : ''}
+        ${p.has_notebook ? '<span class="badge-asset">📓 Colab Notebook</span>' : ''}
       </div>
       
-      <div class="card-footer">
-        <button class="btn-inspect" onclick="openProjectModal('${p.id}')">
-          🔍 Details & Run
+      <div class="card-bottom-bar">
+        <button class="btn-open-modal" onclick="openProjectModal('${p.id}')">
+          ⚡ Inspect & Run
         </button>
-        <div class="card-links">
-          <a href="${p.github_url}" target="_blank" rel="noopener noreferrer" class="icon-btn" title="View Source on GitHub">
+        <div class="action-icon-links">
+          <a href="${p.github_url}" target="_blank" rel="noopener noreferrer" class="icon-action-btn" title="View Source on GitHub">
             💻
           </a>
           ${p.has_notebook ? `
-            <a href="${p.colab_url}" target="_blank" rel="noopener noreferrer" class="icon-btn" title="Open in Google Colab">
+            <a href="${p.colab_url}" target="_blank" rel="noopener noreferrer" class="icon-action-btn" title="Open in Google Colab">
               📓
             </a>
           ` : ''}
@@ -217,12 +310,11 @@ function renderPagination(total) {
   }
   
   let html = `
-    <button class="page-btn" ${STATE.currentPage === 1 ? 'disabled' : ''} onclick="goToPage(${STATE.currentPage - 1})">
+    <button class="btn-page" ${STATE.currentPage === 1 ? 'disabled' : ''} onclick="goToPage(${STATE.currentPage - 1})">
       ◀ Prev
     </button>
   `;
   
-  // Page number buttons
   const maxButtons = 7;
   let startPage = Math.max(1, STATE.currentPage - 3);
   let endPage = Math.min(totalPages, startPage + maxButtons - 1);
@@ -231,13 +323,13 @@ function renderPagination(total) {
   }
   
   if (startPage > 1) {
-    html += `<button class="page-btn" onclick="goToPage(1)">1</button>`;
+    html += `<button class="btn-page" onclick="goToPage(1)">1</button>`;
     if (startPage > 2) html += `<span style="color:#64748B; padding:0 4px;">...</span>`;
   }
   
   for (let i = startPage; i <= endPage; i++) {
     html += `
-      <button class="page-btn ${i === STATE.currentPage ? 'active' : ''}" onclick="goToPage(${i})">
+      <button class="btn-page ${i === STATE.currentPage ? 'active' : ''}" onclick="goToPage(${i})">
         ${i}
       </button>
     `;
@@ -245,11 +337,11 @@ function renderPagination(total) {
   
   if (endPage < totalPages) {
     if (endPage < totalPages - 1) html += `<span style="color:#64748B; padding:0 4px;">...</span>`;
-    html += `<button class="page-btn" onclick="goToPage(${totalPages})">${totalPages}</button>`;
+    html += `<button class="btn-page" onclick="goToPage(${totalPages})">${totalPages}</button>`;
   }
   
   html += `
-    <button class="page-btn" ${STATE.currentPage === totalPages ? 'disabled' : ''} onclick="goToPage(${STATE.currentPage + 1})">
+    <button class="btn-page" ${STATE.currentPage === totalPages ? 'disabled' : ''} onclick="goToPage(${STATE.currentPage + 1})">
       Next ▶
     </button>
   `;
@@ -260,57 +352,67 @@ function renderPagination(total) {
 function goToPage(page) {
   STATE.currentPage = page;
   render();
-  window.scrollTo({ top: DOM.projectsGrid.offsetTop - 80, behavior: 'smooth' });
+  window.scrollTo({ top: DOM.projectsContainer.offsetTop - 80, behavior: 'smooth' });
 }
 
-// Open Detail Modal
+// Open Developer Terminal Modal
 function openProjectModal(projectId) {
   const p = STATE.allProjects.find(item => item.id === projectId);
   if (!p) return;
   
+  DOM.modalTitleBar.textContent = `harsh@1000-ai-projects: ~/${p.path}`;
+  
   const cloneCmd = `git clone https://github.com/HarshChoudhary2003/1000-AI-projects.git\ncd "1000-AI-projects/${p.path}"\npip install -r requirements.txt\npython main.py`;
-  const streamCmd = p.has_app ? `streamlit run app.py` : '';
+  const streamCmd = p.has_app ? `cd "1000-AI-projects/${p.path}"\nstreamlit run app.py` : '';
   
   DOM.modalBody.innerHTML = `
-    <div class="modal-header-badge">
-      <span class="project-id-badge">#${p.num.toString().padStart(4, '0')}</span>
-      <span class="category-chip" style="color:${p.cat_color}; background:${p.cat_color}18; border: 1px solid ${p.cat_color}33;">
+    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 14px;">
+      <span class="card-num-badge">#${p.num.toString().padStart(4, '0')}</span>
+      <span class="card-cat-badge" style="color:${p.cat_color}; background:${p.cat_color}18; border: 1px solid ${p.cat_color}33;">
         ${p.cat_icon} ${p.cat_name}
       </span>
-      <span class="asset-badge" style="margin-left:auto;">${p.diff}</span>
+      <span class="badge-asset" style="margin-left: auto;">${p.diff}</span>
     </div>
     
-    <h2 class="modal-title">${escapeHTML(p.title)}</h2>
-    <p class="modal-desc">${escapeHTML(p.desc)}</p>
+    <h2 style="font-family: 'Outfit', sans-serif; font-size: 1.8rem; font-weight: 800; color: #fff; margin-bottom: 14px; line-height: 1.25;">
+      ${escapeHTML(p.title)}
+    </h2>
     
-    <div class="code-box-header">
-      <span>🚀 Quickstart Terminal Command</span>
+    <p style="font-size: 0.96rem; color: #CBD5E1; line-height: 1.6; margin-bottom: 24px;">
+      ${escapeHTML(p.desc)}
+    </p>
+    
+    <!-- Quickstart Execution Command -->
+    <div style="display: flex; align-items: center; justify-content: space-between; font-size: 0.8rem; font-weight: 700; color: #94A3B8; text-transform: uppercase; letter-spacing: 0.05em;">
+      <span>💻 1-Line Standalone Terminal Execution</span>
     </div>
-    <div class="terminal-box">
+    <div class="terminal-code-block">
       <span>${escapeHTML(cloneCmd.replace(/\n/g, ' && '))}</span>
-      <button class="btn-copy" onclick="copyText('${escapeAttr(cloneCmd)}')">Copy Command</button>
+      <button class="btn-terminal-copy" onclick="copySnippet('${escapeAttr(cloneCmd)}')">Copy Command</button>
     </div>
     
+    <!-- Interactive Web App Studio -->
     ${p.has_app ? `
-      <div class="code-box-header">
-        <span>🌐 Launch Interactive Streamlit UI</span>
+      <div style="display: flex; align-items: center; justify-content: space-between; font-size: 0.8rem; font-weight: 700; color: #34D399; text-transform: uppercase; letter-spacing: 0.05em;">
+        <span>🌐 Launch Interactive Streamlit Studio</span>
       </div>
-      <div class="terminal-box" style="color: #34D399;">
-        <span>${escapeHTML(streamCmd)}</span>
-        <button class="btn-copy" onclick="copyText('${escapeAttr(streamCmd)}')">Copy</button>
+      <div class="terminal-code-block studio-code">
+        <span>${escapeHTML(streamCmd.replace(/\n/g, ' && '))}</span>
+        <button class="btn-terminal-copy" onclick="copySnippet('${escapeAttr(streamCmd)}')">Copy Command</button>
       </div>
     ` : ''}
     
-    <div class="modal-actions">
-      <a href="${p.github_url}" target="_blank" rel="noopener noreferrer" class="btn-primary">
-        💻 View on GitHub
+    <!-- Quick Action Launchers -->
+    <div style="display: flex; flex-wrap: wrap; gap: 12px; margin-top: 26px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.08);">
+      <a href="${p.github_url}" target="_blank" rel="noopener noreferrer" class="btn-open-modal" style="background: var(--accent-indigo); color: #fff; padding: 10px 20px;">
+        💻 View Source on GitHub
       </a>
       ${p.has_notebook ? `
-        <a href="${p.colab_url}" target="_blank" rel="noopener noreferrer" class="btn-secondary">
+        <a href="${p.colab_url}" target="_blank" rel="noopener noreferrer" class="btn-open-modal" style="padding: 10px 18px;">
           📓 Open in Google Colab
         </a>
       ` : ''}
-      <a href="${p.github_url}/README.md" target="_blank" rel="noopener noreferrer" class="btn-secondary">
+      <a href="${p.github_url}/README.md" target="_blank" rel="noopener noreferrer" class="btn-open-modal" style="padding: 10px 18px;">
         📖 Read Full Blueprint
       </a>
     </div>
@@ -325,6 +427,30 @@ function closeModal() {
   document.body.style.overflow = '';
 }
 
+// Toast Notification
+function showToast(message) {
+  if (!DOM.toastNotice) return;
+  DOM.toastMsg.textContent = message;
+  DOM.toastNotice.classList.add('show');
+  setTimeout(() => {
+    DOM.toastNotice.classList.remove('show');
+  }, 2600);
+}
+
+function copySnippet(text) {
+  navigator.clipboard.writeText(text).then(() => {
+    showToast("Command copied to clipboard! ✓");
+  }).catch(() => {
+    const el = document.createElement('textarea');
+    el.value = text;
+    document.body.appendChild(el);
+    el.select();
+    document.execCommand('copy');
+    document.body.removeChild(el);
+    showToast("Command copied to clipboard! ✓");
+  });
+}
+
 function resetFilters() {
   STATE.searchQuery = '';
   STATE.selectedCategory = 'all';
@@ -333,48 +459,54 @@ function resetFilters() {
   STATE.sortBy = 'id_asc';
   
   if (DOM.searchInput) DOM.searchInput.value = '';
+  if (DOM.searchClearBtn) DOM.searchClearBtn.classList.remove('visible');
   if (DOM.categorySelect) DOM.categorySelect.value = 'all';
   if (DOM.difficultySelect) DOM.difficultySelect.value = 'all';
   if (DOM.onlyInteractiveToggle) DOM.onlyInteractiveToggle.checked = false;
   if (DOM.sortSelect) DOM.sortSelect.value = 'id_asc';
   
-  // reset quick pills
-  document.querySelectorAll('.pill-btn').forEach(btn => btn.classList.remove('active'));
-  const allBtn = document.querySelector('.pill-btn[data-cat="all"]');
+  document.querySelectorAll('.domain-pill').forEach(btn => btn.classList.remove('active'));
+  const allBtn = document.querySelector('.domain-pill[data-cat="all"]');
   if (allBtn) allBtn.classList.add('active');
   
   applyFilters();
 }
 
-function copyText(text) {
-  navigator.clipboard.writeText(text).then(() => {
-    alert('Copied to clipboard!');
-  }).catch(() => {
-    const el = document.createElement('textarea');
-    el.value = text;
-    document.body.appendChild(el);
-    el.select();
-    document.execCommand('copy');
-    document.body.removeChild(el);
-    alert('Copied to clipboard!');
-  });
-}
-
 // Event Listeners
 function attachEventListeners() {
-  // Search input debounced
+  // Search with debounce & clear button
   let debounceTimer;
   DOM.searchInput.addEventListener('input', (e) => {
+    const val = e.target.value;
+    if (DOM.searchClearBtn) {
+      if (val) DOM.searchClearBtn.classList.add('visible');
+      else DOM.searchClearBtn.classList.remove('visible');
+    }
+    
     clearTimeout(debounceTimer);
     debounceTimer = setTimeout(() => {
-      STATE.searchQuery = e.target.value;
+      STATE.searchQuery = val;
       applyFilters();
-    }, 200);
+    }, 180);
   });
+  
+  if (DOM.searchClearBtn) {
+    DOM.searchClearBtn.addEventListener('click', () => {
+      DOM.searchInput.value = '';
+      DOM.searchClearBtn.classList.remove('visible');
+      STATE.searchQuery = '';
+      applyFilters();
+      DOM.searchInput.focus();
+    });
+  }
   
   // Dropdowns
   DOM.categorySelect.addEventListener('change', (e) => {
     STATE.selectedCategory = e.target.value;
+    // sync carousel
+    document.querySelectorAll('.domain-pill').forEach(b => b.classList.remove('active'));
+    const target = document.querySelector(`.domain-pill[data-cat="${e.target.value}"]`);
+    if (target) target.classList.add('active');
     applyFilters();
   });
   
@@ -393,29 +525,33 @@ function attachEventListeners() {
     applyFilters();
   });
   
-  // Quick Filter Pills
-  DOM.quickPills.addEventListener('click', (e) => {
-    const btn = e.target.closest('.pill-btn');
+  // Domain Carousel Click
+  DOM.domainCarousel.addEventListener('click', (e) => {
+    const btn = e.target.closest('.domain-pill');
     if (!btn) return;
     
-    document.querySelectorAll('.pill-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.domain-pill').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     
     const cat = btn.getAttribute('data-cat');
-    const isInteractive = btn.getAttribute('data-interactive') === 'true';
-    
-    if (isInteractive) {
-      STATE.onlyInteractive = true;
-      DOM.onlyInteractiveToggle.checked = true;
-      STATE.selectedCategory = 'all';
-      DOM.categorySelect.value = 'all';
-    } else {
-      STATE.onlyInteractive = false;
-      DOM.onlyInteractiveToggle.checked = false;
-      STATE.selectedCategory = cat;
-      DOM.categorySelect.value = cat;
-    }
+    STATE.selectedCategory = cat;
+    DOM.categorySelect.value = cat;
     applyFilters();
+  });
+  
+  // View Mode Buttons (Grid vs Table)
+  DOM.viewGridBtn.addEventListener('click', () => {
+    STATE.viewMode = 'grid';
+    DOM.viewGridBtn.classList.add('active');
+    DOM.viewListBtn.classList.remove('active');
+    render();
+  });
+  
+  DOM.viewListBtn.addEventListener('click', () => {
+    STATE.viewMode = 'table';
+    DOM.viewListBtn.classList.add('active');
+    DOM.viewGridBtn.classList.remove('active');
+    render();
   });
   
   // Modal close handlers

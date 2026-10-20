@@ -807,7 +807,7 @@ with tab_vis:
             margin=dict(l=10, r=10, t=10, b=10),
             template="plotly_white"
         )
-        st.plotly_chart(fig_net, use_container_width=True)
+        st.plotly_chart(fig_net, width="stretch")
         st.caption("🔵 Blue/Purple/Green lines = Positive synaptic weights | 🔴 Red lines = Negative inhibitory weights. Line thickness indicates absolute weight magnitude.")
         
     with col_v2:
@@ -820,7 +820,7 @@ with tab_vis:
             index=["Input x₁", "Input x₂"],
             columns=[f"H_{j+1}" for j in range(hidden_dim)]
         )
-        st.dataframe(df_w1.style.background_gradient(cmap="coolwarm", axis=None).format("{:.3f}"), use_container_width=True)
+        st.dataframe(df_w1.style.background_gradient(cmap="coolwarm", axis=None).format("{:.3f}"), width="stretch")
         
         st.markdown("**Hidden Layer Biases ($b^{[1]}$)**")
         df_b1 = pd.DataFrame(
@@ -828,7 +828,7 @@ with tab_vis:
             index=["Bias"],
             columns=[f"H_{j+1}" for j in range(hidden_dim)]
         )
-        st.dataframe(df_b1.style.background_gradient(cmap="coolwarm", axis=None).format("{:.3f}"), use_container_width=True)
+        st.dataframe(df_b1.style.background_gradient(cmap="coolwarm", axis=None).format("{:.3f}"), width="stretch")
         
         st.markdown("**Output Layer Weights & Bias ($W^{[out]}, b^{[out]}$)**")
         df_w_out = pd.DataFrame(
@@ -836,7 +836,7 @@ with tab_vis:
             index=["Output ŷ"],
             columns=[f"H_{j+1}" for j in range(hidden_dim)]
         )
-        st.dataframe(df_w_out.style.background_gradient(cmap="coolwarm", axis=None).format("{:.3f}"), use_container_width=True)
+        st.dataframe(df_w_out.style.background_gradient(cmap="coolwarm", axis=None).format("{:.3f}"), width="stretch")
         st.write(f"Output Bias $b^{{[out]}}$: `{float(nn_model.b_out[0, 0]):.4f}`")
 
 
@@ -874,7 +874,7 @@ with tab_conv:
             template="plotly_white",
             height=340
         )
-        st.plotly_chart(fig_loss, use_container_width=True)
+        st.plotly_chart(fig_loss, width="stretch")
         
     with col_c2:
         # Accuracy curve
@@ -894,7 +894,7 @@ with tab_conv:
             template="plotly_white",
             height=340
         )
-        st.plotly_chart(fig_acc, use_container_width=True)
+        st.plotly_chart(fig_acc, width="stretch")
 
     st.markdown("---")
     st.markdown("### 🏆 Convergence Summary")
@@ -996,7 +996,7 @@ with tab_bound:
         height=520
     )
     
-    st.plotly_chart(fig_boundary, use_container_width=True)
+    st.plotly_chart(fig_boundary, width="stretch")
     st.caption("🔴 The red solid contour represents the exact decision boundary threshold ($P(\\hat{y} \\geq 0.5)$). The background heatmap indicates the predicted probability spectrum.")
 
 
@@ -1030,7 +1030,7 @@ with tab_disentangle:
         )
         fig_orig.update_traces(marker=dict(size=12, line=dict(width=1, color="black")))
         fig_orig.update_layout(height=380)
-        st.plotly_chart(fig_orig, use_container_width=True)
+        st.plotly_chart(fig_orig, width="stretch")
         
     with col_d2:
         st.markdown("### 🌌 Transformed Hidden Space")
@@ -1052,7 +1052,7 @@ with tab_disentangle:
             )
             fig_hidden.update_traces(marker=dict(size=12, line=dict(width=1, color="black")))
             fig_hidden.update_layout(height=380)
-            st.plotly_chart(fig_hidden, use_container_width=True)
+            st.plotly_chart(fig_hidden, width="stretch")
             st.caption("✨ Notice how the non-linear entangled clusters in the input space are pushed into distinct separable regions in the hidden neuron activation space!")
         else:
             st.info("Increase hidden neurons to at least 2 to visualize the hidden activation space projection.")
@@ -1194,7 +1194,7 @@ with tab_infer:
             name="Query Point"
         ))
         fig_pt.update_layout(height=320, showlegend=False)
-        st.plotly_chart(fig_pt, use_container_width=True)
+        st.plotly_chart(fig_pt, width="stretch")
 
 
 # ------------------------------------------------------------------------------
