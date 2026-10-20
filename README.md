@@ -148,6 +148,26 @@ Selected projects include interactive **Streamlit web applications** featuring l
   * Single-instance live probability scorer with visual risk badge
   * *Run with:* `streamlit run 01_Machine_Learning_Basic_Projects/PROJECT_0002_logistic_regression_for_binary_classification/app.py`
 
+* 🛍️ **[Project 0003: Customer Segmentation & K-Means Studio](01_Machine_Learning_Basic_Projects/PROJECT_0003_k_means_clustering_for_customer_segmentation/app.py)**  
+  * Dynamic cluster count tuning ($K \in [2, 10]$) with automated Elbow & Silhouette analysis
+  * Interactive 2D & 3D PCA cluster scatter projections with centroid inspection
+  * Segment behavioral profiling with average spend, frequency, and recency summaries
+  * *Run with:* `streamlit run 01_Machine_Learning_Basic_Projects/PROJECT_0003_k_means_clustering_for_customer_segmentation/app.py`
+
+* 🌸 **[Project 0004: Iris Flower Classification Studio](01_Machine_Learning_Basic_Projects/PROJECT_0004_decision_tree_classifier_for_iris_dataset/app.py)**  
+  * Complete decision tree architecture diagram & exportable text-based rule hierarchy
+  * Interactive 2D decision boundary contours over any two morphological dimensions
+  * Multi-class confusion matrix, Gini feature importances, and live botanical specimen classifier
+  * *Run with:* `streamlit run 01_Machine_Learning_Basic_Projects/PROJECT_0004_decision_tree_classifier_for_iris_dataset/app.py`
+
+* 🧠 **[Project 0005: Neural Network from Scratch Studio](01_Machine_Learning_Basic_Projects/PROJECT_0005_simple_neural_network_from_scratch/app.py)**  
+  * Pure NumPy multi-layer perceptron engine with customizable activations (Sigmoid, Tanh, ReLU)
+  * Dynamic synaptic connectivity diagram with positive/negative weight thickness encoding
+  * Real-time loss & accuracy convergence trajectories across logic gates and continuous 2D manifolds
+  * 2D decision boundary surface and hidden layer representation space (manifold disentanglement)
+  * Single-sample forward & analytical backpropagation trace with live inference coordinate probe
+  * *Run with:* `streamlit run 01_Machine_Learning_Basic_Projects/PROJECT_0005_simple_neural_network_from_scratch/app.py`
+
 ---
 
 ## 📚 Complete Project Directory (All 1,000 Projects)
@@ -161,9 +181,9 @@ Selected projects include interactive **Streamlit web applications** featuring l
 |---|---|:---:|:---|
 | 0001 | [Linear regression model for predicting house prices](01_Machine_Learning_Basic_Projects/PROJECT_0001_linear_regression_model_for_predicting_house_prices/README.md) | `Beginner` | [🐍 Script](01_Machine_Learning_Basic_Projects/PROJECT_0001_linear_regression_model_for_predicting_house_prices/main.py) • [📓 Notebook](01_Machine_Learning_Basic_Projects/PROJECT_0001_linear_regression_model_for_predicting_house_prices/notebook.ipynb) • [🌐 Web App](01_Machine_Learning_Basic_Projects/PROJECT_0001_linear_regression_model_for_predicting_house_prices/app.py) |
 | 0002 | [Logistic regression for binary classification](01_Machine_Learning_Basic_Projects/PROJECT_0002_logistic_regression_for_binary_classification/README.md) | `Beginner` | [🐍 Script](01_Machine_Learning_Basic_Projects/PROJECT_0002_logistic_regression_for_binary_classification/main.py) • [📓 Notebook](01_Machine_Learning_Basic_Projects/PROJECT_0002_logistic_regression_for_binary_classification/notebook.ipynb) • [🌐 Web App](01_Machine_Learning_Basic_Projects/PROJECT_0002_logistic_regression_for_binary_classification/app.py) |
-| 0003 | [K-means clustering for customer segmentation](01_Machine_Learning_Basic_Projects/PROJECT_0003_k_means_clustering_for_customer_segmentation/README.md) | `Beginner` | [🐍 Script](01_Machine_Learning_Basic_Projects/PROJECT_0003_k_means_clustering_for_customer_segmentation/main.py) • [📓 Notebook](01_Machine_Learning_Basic_Projects/PROJECT_0003_k_means_clustering_for_customer_segmentation/notebook.ipynb) |
-| 0004 | [Decision tree classifier for Iris dataset](01_Machine_Learning_Basic_Projects/PROJECT_0004_decision_tree_classifier_for_iris_dataset/README.md) | `Beginner` | [🐍 Script](01_Machine_Learning_Basic_Projects/PROJECT_0004_decision_tree_classifier_for_iris_dataset/main.py) • [📓 Notebook](01_Machine_Learning_Basic_Projects/PROJECT_0004_decision_tree_classifier_for_iris_dataset/notebook.ipynb) |
-| 0005 | [Simple neural network from scratch](01_Machine_Learning_Basic_Projects/PROJECT_0005_simple_neural_network_from_scratch/README.md) | `Beginner` | [🐍 Script](01_Machine_Learning_Basic_Projects/PROJECT_0005_simple_neural_network_from_scratch/main.py) • [📓 Notebook](01_Machine_Learning_Basic_Projects/PROJECT_0005_simple_neural_network_from_scratch/notebook.ipynb) |
+| 0003 | [K-means clustering for customer segmentation](01_Machine_Learning_Basic_Projects/PROJECT_0003_k_means_clustering_for_customer_segmentation/README.md) | `Beginner` | [🐍 Script](01_Machine_Learning_Basic_Projects/PROJECT_0003_k_means_clustering_for_customer_segmentation/main.py) • [📓 Notebook](01_Machine_Learning_Basic_Projects/PROJECT_0003_k_means_clustering_for_customer_segmentation/notebook.ipynb) • [🌐 Web App](01_Machine_Learning_Basic_Projects/PROJECT_0003_k_means_clustering_for_customer_segmentation/app.py) |
+| 0004 | [Decision tree classifier for Iris dataset](01_Machine_Learning_Basic_Projects/PROJECT_0004_decision_tree_classifier_for_iris_dataset/README.md) | `Beginner` | [🐍 Script](01_Machine_Learning_Basic_Projects/PROJECT_0004_decision_tree_classifier_for_iris_dataset/main.py) • [📓 Notebook](01_Machine_Learning_Basic_Projects/PROJECT_0004_decision_tree_classifier_for_iris_dataset/notebook.ipynb) • [🌐 Web App](01_Machine_Learning_Basic_Projects/PROJECT_0004_decision_tree_classifier_for_iris_dataset/app.py) |
+| 0005 | [Simple neural network from scratch](01_Machine_Learning_Basic_Projects/PROJECT_0005_simple_neural_network_from_scratch/README.md) | `Beginner` | [🐍 Script](01_Machine_Learning_Basic_Projects/PROJECT_0005_simple_neural_network_from_scratch/main.py) • [📓 Notebook](01_Machine_Learning_Basic_Projects/PROJECT_0005_simple_neural_network_from_scratch/notebook.ipynb) • [🌐 Web App](01_Machine_Learning_Basic_Projects/PROJECT_0005_simple_neural_network_from_scratch/app.py) |
 | 0006 | [Naive Bayes classifier for spam detection](01_Machine_Learning_Basic_Projects/PROJECT_0006_naive_bayes_classifier_for_spam_detection/README.md) | `Beginner` | [🐍 Script](01_Machine_Learning_Basic_Projects/PROJECT_0006_naive_bayes_classifier_for_spam_detection/main.py) • [📓 Notebook](01_Machine_Learning_Basic_Projects/PROJECT_0006_naive_bayes_classifier_for_spam_detection/notebook.ipynb) |
 | 0007 | [KNN algorithm implementation](01_Machine_Learning_Basic_Projects/PROJECT_0007_knn_algorithm_implementation/README.md) | `Beginner` | [🐍 Script](01_Machine_Learning_Basic_Projects/PROJECT_0007_knn_algorithm_implementation/main.py) • [📓 Notebook](01_Machine_Learning_Basic_Projects/PROJECT_0007_knn_algorithm_implementation/notebook.ipynb) |
 | 0008 | [Support vector machine for classification](01_Machine_Learning_Basic_Projects/PROJECT_0008_support_vector_machine_for_classification/README.md) | `Beginner` | [🐍 Script](01_Machine_Learning_Basic_Projects/PROJECT_0008_support_vector_machine_for_classification/main.py) • [📓 Notebook](01_Machine_Learning_Basic_Projects/PROJECT_0008_support_vector_machine_for_classification/notebook.ipynb) |
