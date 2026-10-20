@@ -11,7 +11,6 @@ Features:
   - Real-time customer classification simulator
   - One-click export of segmented customer records
 
-Author: Antigravity Pair Programmer
 """
 
 import streamlit as st
