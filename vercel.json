@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "cleanUrls": true,
+  "rewrites": [
+    { "source": "/", "destination": "/showcase/index.html" },
+    { "source": "/style.css", "destination": "/showcase/style.css" },
+    { "source": "/app.js", "destination": "/showcase/app.js" },
+    { "source": "/projects.json", "destination": "/showcase/projects.json" },
+    { "source": "/(.*)", "destination": "/showcase/$1" }
+  ]
+}

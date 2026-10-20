@@ -8,12 +8,30 @@
 [![Python: 3.10+](https://img.shields.io/badge/Python-3.10+-brightgreen.svg?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
 [![Jupyter](https://img.shields.io/badge/Jupyter-1000%20Notebooks-orange.svg?style=for-the-badge&logo=jupyter&logoColor=white)](https://jupyter.org/)
 [![Streamlit](https://img.shields.io/badge/Streamlit-UI%20Enabled-FF4B4B.svg?style=for-the-badge&logo=streamlit&logoColor=white)](https://streamlit.io/)
+[![Vercel Showcase](https://img.shields.io/badge/Vercel-Live%20Showcase%20Hub-black.svg?style=for-the-badge&logo=vercel&logoColor=white)](showcase/index.html)
 
 **An end-to-end open-source library containing 1,000 fully implemented, standalone AI & Machine Learning projects across 25 specialized domains.**
 
-[Explore Directory](#-curriculum--category-overview) • [Quickstart Guide](#-quickstart-guide) • [Learning Tracks](#-structured-learning-tracks) • [Interactive Web Apps](#-interactive-web-dashboards)
+[🌐 Live Web Showcase](#-live-web-showcase-hub-vercel-ready) • [Explore Directory](#-curriculum--category-overview) • [Quickstart Guide](#-quickstart-guide) • [Learning Tracks](#-structured-learning-tracks) • [Interactive Web Apps](#-interactive-web-dashboards)
 
 </div>
+
+---
+
+## 🌐 Live Web Showcase Hub (Vercel-Ready)
+
+Explore all 1,000 projects through our high-performance interactive web portal with instant search, domain filters, Google Colab launchers, and live Streamlit studio links:
+
+* 🚀 **Zero-Dependency Web Portal**: Located at [`showcase/`](showcase/) (instant client-side search across all 1,000 implementations).
+* ⚡ **1-Click Vercel Deployment**: Pre-configured via root [`vercel.json`](vercel.json) — simply import this repository into [Vercel](https://vercel.com) and click **Deploy**.
+* 💻 **Run Locally**:
+  ```bash
+  # Python 3
+  python -m http.server 3000 --directory showcase
+  # or Node / npx
+  npx serve showcase
+  ```
+  *Open your browser at `http://localhost:3000` to browse the interactive catalog.*
 
 ---
 

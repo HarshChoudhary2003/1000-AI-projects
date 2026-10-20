@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>1,000 AI Projects Implementation Hub | Interactive Showcase</title>
+  <meta name="description" content="Explore 1,000 standalone, production-ready AI & Machine Learning projects across 25 specialized domains with interactive Streamlit web apps and Google Colab notebooks.">
+  <meta name="keywords" content="Machine Learning, Deep Learning, Artificial Intelligence, Python, Streamlit, 1000 AI Projects, Computer Vision, NLP, Reinforcement Learning">
+  <meta name="author" content="Harsh Choudhary">
+  
+  <!-- Open Graph / Social Sharing -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="1,000 AI Projects Implementation Hub">
+  <meta property="og:description" content="1,000 production-ready AI projects spanning 25 specialized domains with executable code, interactive dashboards, and notebooks.">
+  <meta property="og:image" content="https://raw.githubusercontent.com/HarshChoudhary2003/1000-AI-projects/main/.github/preview.png">
+  
+  <!-- Favicon -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220%22><text y=%2226%22 font-size=%2224%22>🚀</text></svg>">
+  
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Sticky Navbar -->
+  <header class="navbar">
+    <div class="nav-container">
+      <a href="#" class="brand">
+        <span class="brand-icon">🚀</span>
+        <div class="brand-text">
+          <h1>1,000 AI Projects Hub</h1>
+          <span>The Ultimate Machine Learning & AI Implementation Library</span>
+        </div>
+      </a>
+      
+      <div class="nav-actions">
+        <div class="stat-pill">
+          <span class="stat-dot"></span>
+          <span><b>1,000</b> Total Projects</span>
+        </div>
+        <a href="https://github.com/HarshChoudhary2003/1000-AI-projects" target="_blank" rel="noopener noreferrer" class="btn-github">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+          </svg>
+          <span>Star on GitHub</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="hero-badge">
+      <span>✨ 25 Specialized Domains • 40 Projects Each</span>
+    </div>
+    
+    <h2 class="hero-title">
+      Explore <span class="gradient-text">1,000 Standalone</span> AI Implementations
+    </h2>
+    <p class="hero-subtitle">
+      A curated open-source encyclopedia from foundational linear models to multi-agent swarms.
+      Inspect architectures, launch interactive web studios, or run one-click Google Colab notebooks.
+    </p>
+
+    <!-- Top Stats Strip -->
+    <div class="stats-strip">
+      <div class="strip-item">
+        <span class="strip-value" id="statTotal">1,000</span>
+        <span class="strip-label">Total Projects</span>
+      </div>
+      <div class="strip-item">
+        <span class="strip-value" id="statCategories">25</span>
+        <span class="strip-label">AI Categories</span>
+      </div>
+      <div class="strip-item">
+        <span class="strip-value" id="statApps" style="color: #34D399;">5</span>
+        <span class="strip-label">Interactive UIs</span>
+      </div>
+      <div class="strip-item">
+        <span class="strip-value">1,000</span>
+        <span class="strip-label">Colab Notebooks</span>
+      </div>
+      <div class="strip-item">
+        <span class="strip-value" style="color: #A855F7;">100%</span>
+        <span class="strip-label">Open Source</span>
+      </div>
+    </div>
+
+    <!-- Live Search Box -->
+    <div class="search-wrapper">
+      <div class="search-input-box">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="searchInput" class="search-input" placeholder="Search by project name, #number, algorithm, or tag (e.g., 'XOR', 'YOLO', 'Iris', '0005')...">
+        <span class="search-kbd">/</span>
+      </div>
+    </div>
+
+    <!-- Quick Filter Pills -->
+    <div class="quick-pills" id="quickPills">
+      <button class="pill-btn active" data-cat="all">All Projects</button>
+      <button class="pill-btn" data-cat="all" data-interactive="true" style="border-color: rgba(16, 185, 129, 0.4); color: #34D399;">
+        🌐 Interactive Web Apps
+      </button>
+      <button class="pill-btn" data-cat="1">📊 ML Basics</button>
+      <button class="pill-btn" data-cat="2">⚡ ML Intermediate</button>
+      <button class="pill-btn" data-cat="3">🧠 Deep Learning</button>
+      <button class="pill-btn" data-cat="5">💬 NLP</button>
+      <button class="pill-btn" data-cat="6">👁️ Computer Vision</button>
+      <button class="pill-btn" data-cat="7">🎮 Reinforcement Learning</button>
+      <button class="pill-btn" data-cat="10">🎨 Generative AI</button>
+      <button class="pill-btn" data-cat="12">🏥 Healthcare AI</button>
+      <button class="pill-btn" data-cat="13">💹 Finance AI</button>
+    </div>
+  </section>
+
+  <!-- Filter & Control Toolbar -->
+  <section class="controls-section">
+    <div class="controls-card">
+      <div class="filters-group">
+        <!-- Domain Select -->
+        <select id="categorySelect" class="filter-select" aria-label="Select AI Domain">
+          <option value="all">All 25 AI Domains</option>
+        </select>
+
+        <!-- Difficulty Select -->
+        <select id="difficultySelect" class="filter-select" aria-label="Filter by Difficulty">
+          <option value="all">All Difficulties</option>
+          <option value="beginner">Beginner</option>
+          <option value="intermediate">Intermediate</option>
+          <option value="advanced">Advanced</option>
+        </select>
+
+        <!-- Interactive Only Switch -->
+        <label class="toggle-label">
+          <input type="checkbox" id="onlyInteractiveToggle" style="display: none;">
+          <span class="toggle-switch"></span>
+          <span>Only Web Apps (Streamlit)</span>
+        </label>
+      </div>
+
+      <div class="filters-group">
+        <!-- Sort Select -->
+        <select id="sortSelect" class="filter-select" aria-label="Sort Projects">
+          <option value="id_asc">Sort: Project # (1 → 1000)</option>
+          <option value="id_desc">Sort: Project # (1000 → 1)</option>
+          <option value="title_asc">Sort: Title (A → Z)</option>
+          <option value="cat_asc">Sort: By Domain Category</option>
+        </select>
+        
+        <span class="results-meta" id="resultsCount">Loading projects...</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Main Projects Grid -->
+  <main class="main-container">
+    <div class="projects-grid" id="projectsGrid">
+      <!-- Dynamically Rendered by app.js -->
+    </div>
+
+    <!-- Pagination Controls -->
+    <div class="pagination-wrapper" id="paginationWrapper"></div>
+  </main>
+
+  <!-- Project Detail Modal -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal-card" id="modalCard">
+      <button class="modal-close" id="modalClose" aria-label="Close dialog">✕</button>
+      <div id="modalBody">
+        <!-- Populated dynamically on click -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <p>
+      Created with ❤️ for the Global AI Community by 
+      <a href="https://github.com/HarshChoudhary2003" target="_blank" rel="noopener noreferrer">Harsh Choudhary</a>.
+      Distributed under the MIT License.
+    </p>
+    <p style="margin-top: 6px; font-size: 0.78rem; color: #475569;">
+      1,000 Standalone Machine Learning, Deep Learning, and AI Implementations.
+    </p>
+  </footer>
+
+  <!-- Application Logic -->
+  <script src="app.js"></script>
+</body>
+</html>
