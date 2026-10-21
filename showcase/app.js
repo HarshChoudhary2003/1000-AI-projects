@@ -464,8 +464,8 @@ function openProjectModal(projectId) {
     ` : ''}
     
     <!-- Quick Action Launchers -->
-    <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 24px; padding-top: 18px; border-top: 1px solid rgba(255,255,255,0.08);">
-      <a href="${p.github_url}" target="_blank" rel="noopener noreferrer" class="btn-open-modal" style="background: var(--accent-gold); color: #000; font-weight: 700; padding: 9px 18px;">
+    <div class="modal-actions-row">
+      <a href="${p.github_url}" target="_blank" rel="noopener noreferrer" class="btn-open-modal btn-modal-primary">
         ${SVG_ICONS.github} View Source on GitHub
       </a>
       ${p.has_notebook ? `
