@@ -1207,3 +1207,20 @@ input[type="checkbox"]:checked + .custom-switch::after {
     grid-template-columns: repeat(4, 1fr);
   }
 }
+
+/* Skeleton Card Loader State */
+.skeleton-card {
+  min-height: 230px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.02) 25%, rgba(255, 255, 255, 0.06) 50%, rgba(255, 255, 255, 0.02) 75%);
+  background-size: 200% 100%;
+  animation: skeletonShimmer 1.8s ease-in-out infinite;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: var(--radius-lg);
+  pointer-events: none;
+}
+
+@keyframes skeletonShimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+

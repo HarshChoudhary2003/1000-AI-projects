@@ -108,7 +108,7 @@ const DOM = {
 // Initialize Application
 async function init() {
   try {
-    const res = await fetch('projects.json');
+    const res = await fetch('projects.json?v=2.2');
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     
