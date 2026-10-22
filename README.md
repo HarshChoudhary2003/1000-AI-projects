@@ -189,6 +189,21 @@ Selected projects include interactive **Streamlit web applications** featuring l
   * Single-sample forward & analytical backpropagation trace with live inference coordinate probe
   * *Run with:* `streamlit run 01_Machine_Learning_Basic_Projects/PROJECT_0005_simple_neural_network_from_scratch/app.py`
 
+* 🛡️ **[Project 0006: Naive Bayes Spam & Phishing Detection Studio](01_Machine_Learning_Basic_Projects/PROJECT_0006_naive_bayes_classifier_for_spam_detection/app.py)**  
+  * Real-time token-level log-odds Explainable AI attribution ($\log \frac{P(w|\text{Spam})}{P(w|\text{Ham})}$) with color-coded token badges
+  * Multi-model probabilistic engine: Multinomial, Bernoulli, and Complement Naive Bayes
+  * Interactive Confusion Matrix, dual ROC / Precision-Recall curves, and Decision Threshold trade-off curve
+  * Multi-message batch scanner and CSV threat auditor with severity breakdown
+  * *Run with:* `streamlit run 01_Machine_Learning_Basic_Projects/PROJECT_0006_naive_bayes_classifier_for_spam_detection/app.py`
+
+* 🧭 **[Project 0007: K-Nearest Neighbors Spatial Geometry Studio](01_Machine_Learning_Basic_Projects/PROJECT_0007_knn_algorithm_implementation/app.py)**  
+  * Interactive 2D decision surface contour plot with live query probe position sliders
+  * Dynamic vector tracer connecting test probe directly to its $K$ closest training neighbors with halo rings
+  * Automated 5-fold cross-validation $K$-optimization curve and Bias-Variance analysis
+  * Distance metric benchmark ($L_1, L_2, L_\infty, \text{Cosine}$) and feature scaling sensitivity lab
+  * Interactive simulation of the Curse of Dimensionality & distance concentration phenomenon
+  * *Run with:* `streamlit run 01_Machine_Learning_Basic_Projects/PROJECT_0007_knn_algorithm_implementation/app.py`
+
 ---
 
 ## 📚 Complete Project Directory (All 1,000 Projects)
@@ -205,8 +220,8 @@ Selected projects include interactive **Streamlit web applications** featuring l
 | 0003 | [K-means clustering for customer segmentation](01_Machine_Learning_Basic_Projects/PROJECT_0003_k_means_clustering_for_customer_segmentation/README.md) | `Beginner` | [🐍 Script](01_Machine_Learning_Basic_Projects/PROJECT_0003_k_means_clustering_for_customer_segmentation/main.py) • [📓 Notebook](01_Machine_Learning_Basic_Projects/PROJECT_0003_k_means_clustering_for_customer_segmentation/notebook.ipynb) • [🌐 Web App](01_Machine_Learning_Basic_Projects/PROJECT_0003_k_means_clustering_for_customer_segmentation/app.py) |
 | 0004 | [Decision tree classifier for Iris dataset](01_Machine_Learning_Basic_Projects/PROJECT_0004_decision_tree_classifier_for_iris_dataset/README.md) | `Beginner` | [🐍 Script](01_Machine_Learning_Basic_Projects/PROJECT_0004_decision_tree_classifier_for_iris_dataset/main.py) • [📓 Notebook](01_Machine_Learning_Basic_Projects/PROJECT_0004_decision_tree_classifier_for_iris_dataset/notebook.ipynb) • [🌐 Web App](01_Machine_Learning_Basic_Projects/PROJECT_0004_decision_tree_classifier_for_iris_dataset/app.py) |
 | 0005 | [Simple neural network from scratch](01_Machine_Learning_Basic_Projects/PROJECT_0005_simple_neural_network_from_scratch/README.md) | `Beginner` | [🐍 Script](01_Machine_Learning_Basic_Projects/PROJECT_0005_simple_neural_network_from_scratch/main.py) • [📓 Notebook](01_Machine_Learning_Basic_Projects/PROJECT_0005_simple_neural_network_from_scratch/notebook.ipynb) • [🌐 Web App](01_Machine_Learning_Basic_Projects/PROJECT_0005_simple_neural_network_from_scratch/app.py) |
-| 0006 | [Naive Bayes classifier for spam detection](01_Machine_Learning_Basic_Projects/PROJECT_0006_naive_bayes_classifier_for_spam_detection/README.md) | `Beginner` | [🐍 Script](01_Machine_Learning_Basic_Projects/PROJECT_0006_naive_bayes_classifier_for_spam_detection/main.py) • [📓 Notebook](01_Machine_Learning_Basic_Projects/PROJECT_0006_naive_bayes_classifier_for_spam_detection/notebook.ipynb) |
-| 0007 | [KNN algorithm implementation](01_Machine_Learning_Basic_Projects/PROJECT_0007_knn_algorithm_implementation/README.md) | `Beginner` | [🐍 Script](01_Machine_Learning_Basic_Projects/PROJECT_0007_knn_algorithm_implementation/main.py) • [📓 Notebook](01_Machine_Learning_Basic_Projects/PROJECT_0007_knn_algorithm_implementation/notebook.ipynb) |
+| 0006 | [Naive Bayes classifier for spam detection](01_Machine_Learning_Basic_Projects/PROJECT_0006_naive_bayes_classifier_for_spam_detection/README.md) | `Beginner` | [🐍 Script](01_Machine_Learning_Basic_Projects/PROJECT_0006_naive_bayes_classifier_for_spam_detection/main.py) • [📓 Notebook](01_Machine_Learning_Basic_Projects/PROJECT_0006_naive_bayes_classifier_for_spam_detection/notebook.ipynb) • [🌐 Web App](01_Machine_Learning_Basic_Projects/PROJECT_0006_naive_bayes_classifier_for_spam_detection/app.py) |
+| 0007 | [KNN algorithm implementation](01_Machine_Learning_Basic_Projects/PROJECT_0007_knn_algorithm_implementation/README.md) | `Beginner` | [🐍 Script](01_Machine_Learning_Basic_Projects/PROJECT_0007_knn_algorithm_implementation/main.py) • [📓 Notebook](01_Machine_Learning_Basic_Projects/PROJECT_0007_knn_algorithm_implementation/notebook.ipynb) • [🌐 Web App](01_Machine_Learning_Basic_Projects/PROJECT_0007_knn_algorithm_implementation/app.py) |
 | 0008 | [Support vector machine for classification](01_Machine_Learning_Basic_Projects/PROJECT_0008_support_vector_machine_for_classification/README.md) | `Beginner` | [🐍 Script](01_Machine_Learning_Basic_Projects/PROJECT_0008_support_vector_machine_for_classification/main.py) • [📓 Notebook](01_Machine_Learning_Basic_Projects/PROJECT_0008_support_vector_machine_for_classification/notebook.ipynb) |
 | 0009 | [Random forest classifier](01_Machine_Learning_Basic_Projects/PROJECT_0009_random_forest_classifier/README.md) | `Beginner` | [🐍 Script](01_Machine_Learning_Basic_Projects/PROJECT_0009_random_forest_classifier/main.py) • [📓 Notebook](01_Machine_Learning_Basic_Projects/PROJECT_0009_random_forest_classifier/notebook.ipynb) |
 | 0010 | [Gradient boosting algorithm implementation](01_Machine_Learning_Basic_Projects/PROJECT_0010_gradient_boosting_algorithm_implementation/README.md) | `Beginner` | [🐍 Script](01_Machine_Learning_Basic_Projects/PROJECT_0010_gradient_boosting_algorithm_implementation/main.py) • [📓 Notebook](01_Machine_Learning_Basic_Projects/PROJECT_0010_gradient_boosting_algorithm_implementation/notebook.ipynb) |
