@@ -713,7 +713,8 @@ Selected projects include interactive **Streamlit web applications** featuring l
 
 ### 📁 11. Graph Neural Networks Projects (40 Projects)
 > **Domain Focus:** Node Classification, Link Prediction, GCN, GAT, GraphSAGE, Knowledge Graphs  
-> **Primary Tech Stack:** `PyTorch Geometric, NetworkX`
+> **Interactive Studio:** [🕸️ Launch Category 11 GNN Interactive Studio](11_Graph_Neural_Networks_Projects/index.html) • [📖 Architecture Guide](11_Graph_Neural_Networks_Projects/README.md)  
+> **Primary Tech Stack:** `PyTorch Geometric, NetworkX, Canvas HTML5 Physics`
 
 | # | Project Title | Difficulty | Executable Assets |
 |---|---|:---:|:---|
