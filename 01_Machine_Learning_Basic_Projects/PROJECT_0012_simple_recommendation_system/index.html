@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Movie Recommendation System - Interactive UI</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f5f3ff',
+                            100: '#ede9fe',
+                            500: '#8b5cf6',
+                            600: '#7c3aed',
+                            700: '#6d28d9',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .star-active { color: #facc15; }
+        .star-inactive { color: #475569; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen font-sans selection:bg-purple-500 selection:text-white">
+
+    <!-- Navbar -->
+    <header class="border-b border-slate-800 bg-slate-900/60 sticky top-0 z-50 backdrop-blur-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex flex-wrap justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-purple-600 to-indigo-500 flex items-center justify-center text-xl shadow-lg shadow-purple-500/20">
+                    🎬
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold bg-gradient-to-r from-purple-400 via-indigo-300 to-pink-400 bg-clip-text text-transparent">
+                        Movie Recommendation System
+                    </h1>
+                    <p class="text-xs text-slate-400">Project 012 · Collaborative Filtering Engine</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="text-xs px-3 py-1 rounded-full bg-purple-950 text-purple-300 border border-purple-800/60">
+                    Cosine Similarity Engine
+                </span>
+                <button onclick="resetData()" class="text-xs px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 transition border border-slate-700 text-slate-300 flex items-center gap-1.5">
+                    🔄 Reset Matrix
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-8">
+        
+        <!-- Controls Bar -->
+        <section class="glass-panel p-6 rounded-2xl shadow-xl flex flex-col md:flex-row gap-6 justify-between items-start md:items-center">
+            <div class="space-y-1">
+                <label class="text-xs uppercase tracking-wider font-semibold text-purple-400">Target User</label>
+                <div class="flex flex-wrap items-center gap-2 pt-1" id="user-pills">
+                    <!-- Populated dynamically -->
+                </div>
+            </div>
+            <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                <div>
+                    <label class="text-xs uppercase tracking-wider font-semibold text-slate-400">Algorithm Mode</label>
+                    <select id="algo-mode" onchange="computeRecommendations()" class="mt-1 block bg-slate-800 border border-slate-700 text-sm rounded-lg px-3 py-2 text-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-500">
+                        <option value="top-peer">User-Based (Top Peer)</option>
+                        <option value="weighted">User-Based (Weighted Consensus)</option>
+                    </select>
+                </div>
+            </div>
+        </section>
+
+        <!-- Stats Overview Cards -->
+        <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="glass-panel p-5 rounded-xl border border-slate-800">
+                <div class="text-xs text-slate-400 uppercase tracking-wide">Target User</div>
+                <div class="text-2xl font-bold text-white mt-1" id="stat-target-user">-</div>
+                <div class="text-xs text-purple-400 mt-1" id="stat-movies-rated">0 movies rated</div>
+            </div>
+            <div class="glass-panel p-5 rounded-xl border border-slate-800">
+                <div class="text-xs text-slate-400 uppercase tracking-wide">Closest Taste Match</div>
+                <div class="text-2xl font-bold text-emerald-400 mt-1" id="stat-top-peer">-</div>
+                <div class="text-xs text-slate-400 mt-1">Highest vector alignment</div>
+            </div>
+            <div class="glass-panel p-5 rounded-xl border border-slate-800">
+                <div class="text-xs text-slate-400 uppercase tracking-wide">Peer Cosine Similarity</div>
+                <div class="text-2xl font-bold text-purple-400 mt-1" id="stat-top-sim">0.000</div>
+                <div class="text-xs text-slate-400 mt-1">Score out of 1.000</div>
+            </div>
+            <div class="glass-panel p-5 rounded-xl border border-slate-800">
+                <div class="text-xs text-slate-400 uppercase tracking-wide">Top Recommendation</div>
+                <div class="text-2xl font-bold text-pink-400 mt-1 truncate" id="stat-top-rec">-</div>
+                <div class="text-xs text-slate-400 mt-1" id="stat-top-rec-sub">Ready to watch</div>
+            </div>
+        </section>
+
+        <!-- Main Workspace (Grid 2 cols) -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            
+            <!-- Left Col: Recommendations & Target User Ratings (7 cols) -->
+            <div class="lg:col-span-7 space-y-6">
+                <!-- Recommendations Section -->
+                <div class="glass-panel p-6 rounded-2xl">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center gap-2">
+                            <span class="text-lg">🍿</span>
+                            <h2 class="text-lg font-bold text-white">Recommended Movies for <span id="rec-user-name" class="text-purple-400">User</span></h2>
+                        </div>
+                        <span class="text-xs text-slate-400">Unwatched by user</span>
+                    </div>
+
+                    <div id="recommendations-container" class="space-y-3">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
+
+                <!-- Interactive Ratings Editor for Selected User -->
+                <div class="glass-panel p-6 rounded-2xl">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <h3 class="text-base font-bold text-white">⭐ Adjust Ratings for <span id="current-user-edit-name" class="text-purple-400">User</span></h3>
+                            <p class="text-xs text-slate-400">Change sliders (0 = Unseen) and see recommendations update live!</p>
+                        </div>
+                    </div>
+                    <div id="ratings-sliders" class="space-y-4">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Col: Taste Affinity & Heatmaps (5 cols) -->
+            <div class="lg:col-span-5 space-y-6">
+                
+                <!-- Peer Similarity Bar Chart -->
+                <div class="glass-panel p-6 rounded-2xl">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-base font-bold text-white">👥 Taste Affinity Breakdown</h3>
+                        <span class="text-xs text-slate-400">Relative to target</span>
+                    </div>
+                    <div id="peer-bars" class="space-y-3">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
+
+                <!-- Matrix Preview Table -->
+                <div class="glass-panel p-6 rounded-2xl overflow-hidden">
+                    <div class="flex items-center justify-between mb-3">
+                        <h3 class="text-base font-bold text-white">📊 User-Item Rating Matrix</h3>
+                        <span class="text-xs text-slate-400">Full dataset</span>
+                    </div>
+                    <div class="overflow-x-auto text-xs">
+                        <table class="w-full text-left border-collapse" id="matrix-table">
+                            <!-- Populated dynamically -->
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Explainability Card -->
+                <div class="glass-panel p-6 rounded-2xl border-l-4 border-indigo-500">
+                    <h3 class="text-sm font-bold text-indigo-300 uppercase tracking-wider mb-2">💡 Mathematical Formula</h3>
+                    <p class="text-xs text-slate-300 leading-relaxed">
+                        Similarity is computed via the normalized dot product of two user rating vectors:
+                    </p>
+                    <div class="bg-slate-900/80 p-3 rounded-lg my-2 font-mono text-[11px] text-purple-300 text-center">
+                        cos(θ) = (A · B) / (||A|| × ||B||)
+                    </div>
+                    <p class="text-xs text-slate-400">
+                        When vectors point in the same direction in 5D movie space, cosine approaches 1.0. Unwatched movies (0 rating) are filtered, and the closest peer's favorites are surfaced.
+                    </p>
+                </div>
+
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-900 py-6 text-center text-xs text-slate-500">
+        1,000 AI Projects · Project 012 Simple Collaborative Filtering System
+    </footer>
+
+    <!-- Logic Script -->
+    <script>
+        const DEFAULT_MOVIES = ['Avatar', 'Titanic', 'Inception', 'Interstellar', 'Gladiator'];
+        const DEFAULT_USERS = ['Alice', 'Bob', 'Charlie', 'Diana', 'Evan'];
+        const DEFAULT_RATINGS = {
+            'Alice':   [5, 4, 0, 0, 1],
+            'Bob':     [4, 0, 0, 5, 1],
+            'Charlie': [1, 1, 0, 5, 4],
+            'Diana':   [0, 0, 5, 4, 5],
+            'Evan':    [5, 4, 3, 0, 0]
+        };
+
+        let movies = [...DEFAULT_MOVIES];
+        let users = [...DEFAULT_USERS];
+        let ratings = JSON.parse(JSON.stringify(DEFAULT_RATINGS));
+        let activeUser = 'Alice';
+
+        function resetData() {
+            movies = [...DEFAULT_MOVIES];
+            users = [...DEFAULT_USERS];
+            ratings = JSON.parse(JSON.stringify(DEFAULT_RATINGS));
+            renderUserPills();
+            renderRatingsEditor();
+            computeRecommendations();
+            renderMatrixTable();
+        }
+
+        // Math: Dot product
+        function dotProduct(vecA, vecB) {
+            let sum = 0;
+            for (let i = 0; i < vecA.length; i++) {
+                sum += vecA[i] * vecB[i];
+            }
+            return sum;
+        }
+
+        // Math: Magnitude (Euclidean norm)
+        function magnitude(vec) {
+            let sum = 0;
+            for (let i = 0; i < vec.length; i++) {
+                sum += vec[i] * vec[i];
+            }
+            return Math.sqrt(sum);
+        }
+
+        // Math: Cosine Similarity
+        function cosineSimilarity(vecA, vecB) {
+            const magA = magnitude(vecA);
+            const magB = magnitude(vecB);
+            if (magA === 0 || magB === 0) return 0;
+            return dotProduct(vecA, vecB) / (magA * magB);
+        }
+
+        // Render User Selection Pills
+        function renderUserPills() {
+            const container = document.getElementById('user-pills');
+            container.innerHTML = users.map(u => {
+                const isActive = u === activeUser;
+                const activeClass = isActive 
+                    ? 'bg-purple-600 text-white font-medium shadow-md shadow-purple-600/30' 
+                    : 'bg-slate-800 text-slate-300 hover:bg-slate-700';
+                return `<button onclick="selectUser('${u}')" class="px-3.5 py-1.5 rounded-lg text-sm transition ${activeClass}">${u}</button>`;
+            }).join('');
+        }
+
+        function selectUser(user) {
+            activeUser = user;
+            renderUserPills();
+            renderRatingsEditor();
+            computeRecommendations();
+            renderMatrixTable();
+        }
+
+        // Render Slider Inputs for Current User
+        function renderRatingsEditor() {
+            document.getElementById('current-user-edit-name').textContent = activeUser;
+            const container = document.getElementById('ratings-sliders');
+            const userRatings = ratings[activeUser];
+
+            container.innerHTML = movies.map((movie, idx) => {
+                const val = userRatings[idx];
+                const starStr = val === 0 ? 'Not watched' : '★'.repeat(val) + '☆'.repeat(5 - val);
+                return `
+                <div class="space-y-1 bg-slate-900/50 p-3 rounded-xl border border-slate-800/80">
+                    <div class="flex justify-between items-center text-sm">
+                        <span class="font-medium text-slate-200">${movie}</span>
+                        <span class="text-xs font-semibold ${val > 0 ? 'text-amber-400' : 'text-slate-500'}" id="star-label-${idx}">
+                            ${starStr} (${val}/5)
+                        </span>
+                    </div>
+                    <input type="range" min="0" max="5" step="1" value="${val}" 
+                        oninput="updateUserRating(${idx}, this.value)" 
+                        class="w-full accent-purple-500 bg-slate-800 rounded-lg cursor-pointer h-2">
+                </div>
+                `;
+            }).join('');
+        }
+
+        function updateUserRating(movieIdx, value) {
+            ratings[activeUser][movieIdx] = parseInt(value, 10);
+            const val = ratings[activeUser][movieIdx];
+            const starStr = val === 0 ? 'Not watched' : '★'.repeat(val) + '☆'.repeat(5 - val);
+            const label = document.getElementById(`star-label-${movieIdx}`);
+            if (label) {
+                label.textContent = `${starStr} (${val}/5)`;
+                label.className = `text-xs font-semibold ${val > 0 ? 'text-amber-400' : 'text-slate-500'}`;
+            }
+            computeRecommendations();
+            renderMatrixTable();
+        }
+
+        // Compute and Display Recommendations
+        function computeRecommendations() {
+            document.getElementById('stat-target-user').textContent = activeUser;
+            document.getElementById('rec-user-name').textContent = activeUser;
+
+            const targetVec = ratings[activeUser];
+            const ratedCount = targetVec.filter(r => r > 0).length;
+            document.getElementById('stat-movies-rated').textContent = `${ratedCount} / ${movies.length} movies rated`;
+
+            // Calculate similarities to all other users
+            const simScores = [];
+            users.forEach(otherUser => {
+                if (otherUser !== activeUser) {
+                    const sim = cosineSimilarity(targetVec, ratings[otherUser]);
+                    simScores.push({ user: otherUser, similarity: sim });
+                }
+            });
+
+            // Sort by similarity descending
+            simScores.sort((a, b) => b.similarity - a.similarity);
+
+            const topPeer = simScores[0];
+            document.getElementById('stat-top-peer').textContent = topPeer ? topPeer.user : 'None';
+            document.getElementById('stat-top-sim').textContent = topPeer ? topPeer.similarity.toFixed(3) : '0.000';
+
+            // Unwatched movies for target
+            const unwatchedIndices = [];
+            targetVec.forEach((r, idx) => {
+                if (r === 0) unwatchedIndices.push(idx);
+            });
+
+            const algo = document.getElementById('algo-mode').value;
+            let recList = [];
+
+            if (unwatchedIndices.length === 0) {
+                document.getElementById('recommendations-container').innerHTML = `
+                    <div class="text-center py-8 text-slate-400 text-sm">
+                        🎉 ${activeUser} has already rated all movies in the catalog!
+                    </div>
+                `;
+                document.getElementById('stat-top-rec').textContent = 'All Rated';
+                document.getElementById('stat-top-rec-sub').textContent = 'No unwatched movies';
+            } else {
+                if (algo === 'top-peer' && topPeer) {
+                    unwatchedIndices.forEach(idx => {
+                        const peerRating = ratings[topPeer.user][idx];
+                        recList.push({
+                            movie: movies[idx],
+                            score: peerRating,
+                            reason: `Rated ${peerRating}/5 by closest peer ${topPeer.user}`
+                        });
+                    });
+                    recList.sort((a, b) => b.score - a.score);
+                } else {
+                    // Weighted consensus
+                    unwatchedIndices.forEach(idx => {
+                        let weightedSum = 0;
+                        let simSum = 0;
+                        simScores.forEach(peer => {
+                            if (peer.similarity > 0 && ratings[peer.user][idx] > 0) {
+                                weightedSum += peer.similarity * ratings[peer.user][idx];
+                                simSum += peer.similarity;
+                            }
+                        });
+                        const predicted = simSum > 0 ? (weightedSum / simSum) : 0;
+                        recList.push({
+                            movie: movies[idx],
+                            score: predicted,
+                            reason: `Consensus prediction weighted across ${simScores.length} peers`
+                        });
+                    });
+                    recList.sort((a, b) => b.score - a.score);
+                }
+
+                if (recList.length > 0) {
+                    document.getElementById('stat-top-rec').textContent = recList[0].movie;
+                    document.getElementById('stat-top-rec-sub').textContent = `${recList[0].score.toFixed(1)} / 5.0 expected`;
+
+                    const container = document.getElementById('recommendations-container');
+                    container.innerHTML = recList.map((item, rank) => {
+                        const stars = Math.min(5, Math.max(0, Math.round(item.score)));
+                        const starStr = '★'.repeat(stars) + '☆'.repeat(5 - stars);
+                        const badgeColor = item.score >= 4 ? 'border-emerald-500' : (item.score >= 2 ? 'border-amber-500' : 'border-rose-500');
+
+                        return `
+                        <div class="p-4 rounded-xl bg-slate-900 border-l-4 ${badgeColor} border border-slate-800 transition hover:bg-slate-850">
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <span class="text-xs font-semibold px-2 py-0.5 rounded bg-purple-950 text-purple-300 mr-2">#${rank + 1}</span>
+                                    <span class="text-base font-semibold text-slate-100">${item.movie}</span>
+                                </div>
+                                <div class="text-right">
+                                    <span class="text-amber-400 text-sm font-medium">${starStr}</span>
+                                    <span class="text-xs text-slate-400 ml-1">(${item.score.toFixed(1)}/5)</span>
+                                </div>
+                            </div>
+                            <p class="text-xs text-slate-400 mt-2">${item.reason}</p>
+                        </div>
+                        `;
+                    }).join('');
+                }
+            }
+
+            // Render Peer Bars
+            const barContainer = document.getElementById('peer-bars');
+            barContainer.innerHTML = simScores.map(peer => {
+                const percent = Math.max(0, Math.min(100, (peer.similarity * 100))).toFixed(1);
+                const isTop = peer.user === (topPeer ? topPeer.user : '');
+                return `
+                <div class="space-y-1">
+                    <div class="flex justify-between text-xs">
+                        <span class="font-medium ${isTop ? 'text-emerald-400 font-semibold' : 'text-slate-300'}">
+                            ${peer.user} ${isTop ? '★ Top Peer' : ''}
+                        </span>
+                        <span class="text-slate-400 font-mono">${peer.similarity.toFixed(3)} (${percent}%)</span>
+                    </div>
+                    <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                        <div class="h-full rounded-full transition-all duration-300 ${isTop ? 'bg-gradient-to-r from-emerald-500 to-teal-400' : 'bg-gradient-to-r from-purple-600 to-indigo-500'}" 
+                             style="width: ${percent}%;"></div>
+                    </div>
+                </div>
+                `;
+            }).join('');
+        }
+
+        // Render Matrix Table
+        function renderMatrixTable() {
+            const table = document.getElementById('matrix-table');
+            let html = `<thead><tr class="border-b border-slate-800 text-slate-400"><th class="py-2 px-3">User</th>`;
+            movies.forEach(m => {
+                html += `<th class="py-2 px-2 text-center">${m}</th>`;
+            });
+            html += `</tr></thead><tbody>`;
+
+            users.forEach(u => {
+                const isSelected = u === activeUser;
+                html += `<tr class="border-b border-slate-800/50 ${isSelected ? 'bg-purple-950/40 text-purple-200 font-bold' : 'text-slate-300'}">`;
+                html += `<td class="py-2 px-3 flex items-center gap-1.5">${isSelected ? '👉 ' : ''}${u}</td>`;
+                ratings[u].forEach(r => {
+                    const badge = r === 0 
+                        ? `<span class="text-slate-600">-</span>` 
+                        : `<span class="px-1.5 py-0.5 rounded text-[11px] ${r >= 4 ? 'bg-emerald-950 text-emerald-300 font-semibold' : 'bg-slate-800 text-amber-300'}">${r}</span>`;
+                    html += `<td class="py-2 px-2 text-center">${badge}</td>`;
+                });
+                html += `</tr>`;
+            });
+            html += `</tbody>`;
+            table.innerHTML = html;
+        }
+
+        // Initialize on load
+        window.onload = function() {
+            renderUserPills();
+            renderRatingsEditor();
+            computeRecommendations();
+            renderMatrixTable();
+        };
+    </script>
+</body>
+</html>
+
