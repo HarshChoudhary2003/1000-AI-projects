@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Cross-Validation Visualizer | ML Studio</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Three.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- OrbitControls CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #030712;
+            color: #f3f4f6;
+            font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            user-select: none;
+        }
+        #webgl-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 0;
+        }
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5);
+        }
+        .glow-text {
+            text-shadow: 0 0 20px rgba(139, 92, 246, 0.6);
+        }
+        /* Custom scrollbar for control panels */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #374151; border-radius: 4px; }
+    </style>
+</head>
+<body class="relative w-screen h-screen overflow-hidden">
+
+    <!-- 3D WebGL Canvas -->
+    <canvas id="webgl-canvas"></canvas>
+
+    <!-- Top Navigation HUD -->
+    <header class="absolute top-4 left-4 right-4 z-20 flex justify-between items-center pointer-events-none">
+        <div class="glass-panel px-5 py-3 rounded-2xl flex items-center gap-4 pointer-events-auto border-purple-500/20">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 via-purple-600 to-pink-500 flex items-center justify-center shadow-lg shadow-purple-500/30">
+                <i data-lucide="box" class="w-5 h-5 text-white"></i>
+            </div>
+            <div>
+                <div class="flex items-center gap-2">
+                    <h1 class="text-lg font-bold tracking-tight bg-gradient-to-r from-purple-400 via-indigo-300 to-pink-400 bg-clip-text text-transparent">
+                        3D Cross-Validation Visualizer
+                    </h1>
+                    <span class="text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full bg-purple-950 text-purple-300 border border-purple-800">
+                        Project 015
+                    </span>
+                </div>
+                <p class="text-xs text-slate-400">Interactive 3D Data Slices, Feature Space & Fold Podiums</p>
+            </div>
+        </div>
+
+        <!-- Camera & Scene Modes Selector -->
+        <div class="glass-panel px-3 py-2 rounded-2xl flex items-center gap-1.5 pointer-events-auto">
+            <button onclick="setSceneView('slices')" id="btn-view-slices" class="view-btn px-3 py-1.5 rounded-xl text-xs font-medium transition flex items-center gap-1.5 bg-purple-600 text-white shadow-md shadow-purple-600/30">
+                <i data-lucide="layers" class="w-3.5 h-3.5"></i> 3D Fold Slices
+            </button>
+            <button onclick="setSceneView('scatter')" id="btn-view-scatter" class="view-btn px-3 py-1.5 rounded-xl text-xs font-medium transition flex items-center gap-1.5 text-slate-400 hover:text-white hover:bg-slate-800">
+                <i data-lucide="scatter-chart" class="w-3.5 h-3.5"></i> 3D Feature Space
+            </button>
+            <button onclick="setSceneView('podium')" id="btn-view-podium" class="view-btn px-3 py-1.5 rounded-xl text-xs font-medium transition flex items-center gap-1.5 text-slate-400 hover:text-white hover:bg-slate-800">
+                <i data-lucide="bar-chart-3" class="w-3.5 h-3.5"></i> 3D Score Podiums
+            </button>
+            <div class="h-4 w-px bg-slate-700 mx-1"></div>
+            <button onclick="resetCamera()" title="Reset Camera" class="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition">
+                <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- Left Controls Panel -->
+    <aside class="absolute left-4 top-24 bottom-6 w-80 glass-panel rounded-2xl p-5 z-20 flex flex-col justify-between overflow-y-auto space-y-5 border-slate-800">
+        <div class="space-y-5">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+                <span class="text-xs font-semibold uppercase tracking-wider text-purple-400 flex items-center gap-1.5">
+                    <i data-lucide="sliders" class="w-3.5 h-3.5"></i> Split Parameters
+                </span>
+                <span class="text-[11px] text-slate-400" id="total-samples-tag">N = 500 samples</span>
+            </div>
+
+            <!-- CV Strategy -->
+            <div class="space-y-1.5">
+                <label class="text-xs text-slate-300 font-medium">Cross-Validation Method</label>
+                <select id="cv-strategy" onchange="regenerateExperiment()" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-500">
+                    <option value="stratified">Stratified K-Fold (Preserves 85:15 Ratio)</option>
+                    <option value="kfold">Standard K-Fold (Random Partitions)</option>
+                    <option value="timeseries">Time Series Split (Forward Chaining)</option>
+                </select>
+                <p class="text-[11px] text-slate-400" id="strategy-hint">Stratified ensures equal minority class representation in every fold.</p>
+            </div>
+
+            <!-- Number of Folds (K) -->
+            <div class="space-y-2">
+                <div class="flex justify-between items-center text-xs">
+                    <label class="text-slate-300 font-medium">Folds Count (K)</label>
+                    <span class="font-mono text-purple-400 font-bold" id="k-value-label">5 Folds</span>
+                </div>
+                <input type="range" id="k-slider" min="3" max="10" step="1" value="5" oninput="updateK(this.value)" class="w-full accent-purple-500 bg-slate-800 h-1.5 rounded-lg cursor-pointer">
+                <div class="flex justify-between text-[10px] text-slate-500 font-mono">
+                    <span>3</span>
+                    <span>5</span>
+                    <span>7</span>
+                    <span>10</span>
+                </div>
+            </div>
+
+            <!-- Class Imbalance Weight -->
+            <div class="space-y-2">
+                <div class="flex justify-between items-center text-xs">
+                    <label class="text-slate-300 font-medium">Class Ratio (Class 0 : Class 1)</label>
+                    <span class="font-mono text-pink-400 font-bold" id="imbalance-label">85% : 15%</span>
+                </div>
+                <input type="range" id="imbalance-slider" min="50" max="95" step="5" value="85" oninput="updateImbalance(this.value)" class="w-full accent-pink-500 bg-slate-800 h-1.5 rounded-lg cursor-pointer">
+                <div class="flex justify-between text-[10px] text-slate-500 font-mono">
+                    <span>50:50 (Balanced)</span>
+                    <span>85:15</span>
+                    <span>95:5 (Severe)</span>
+                </div>
+            </div>
+
+            <!-- Active Fold Navigation & Animation Controller -->
+            <div class="space-y-3 pt-3 border-t border-slate-800">
+                <div class="flex justify-between items-center text-xs">
+                    <label class="text-slate-300 font-medium">Active Validation Fold</label>
+                    <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-amber-950 text-amber-300 border border-amber-800/80" id="active-fold-tag">
+                        Fold #1 / 5
+                    </span>
+                </div>
+
+                <!-- Fold Stepper Buttons -->
+                <div class="flex items-center gap-1.5" id="fold-stepper-container">
+                    <!-- Populated dynamically based on K -->
+                </div>
+
+                <!-- Auto-Play CV Cycle -->
+                <div class="grid grid-cols-2 gap-2 pt-1">
+                    <button onclick="toggleAutoPlay()" id="btn-autoplay" class="w-full py-2 rounded-xl text-xs font-semibold bg-purple-600/80 hover:bg-purple-600 transition flex items-center justify-center gap-1.5 text-white">
+                        <i data-lucide="play" class="w-3.5 h-3.5" id="play-icon"></i>
+                        <span id="play-text">Auto Play</span>
+                    </button>
+                    <button onclick="regenerateExperiment()" class="w-full py-2 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 transition flex items-center justify-center gap-1.5 text-slate-300 border border-slate-700">
+                        <i data-lucide="shuffle" class="w-3.5 h-3.5"></i> Resample
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3D Legend -->
+        <div class="bg-slate-900/80 rounded-xl p-3 border border-slate-800 text-[11px] space-y-1.5">
+            <div class="font-semibold text-slate-300 uppercase tracking-wide text-[10px] mb-1">3D Visual Key</div>
+            <div class="flex items-center gap-2">
+                <span class="w-3 h-3 rounded-sm bg-indigo-500 shadow-sm shadow-indigo-500"></span>
+                <span class="text-slate-300">Training Partition (K - 1)</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="w-3 h-3 rounded-sm bg-amber-400 shadow-sm shadow-amber-400 animate-pulse"></span>
+                <span class="text-amber-200 font-medium">Testing / Validation Fold (1)</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="w-3 h-3 rounded-full bg-cyan-400"></span>
+                <span class="text-slate-400">Majority Class 0</span>
+                <span class="w-3 h-3 rounded-full bg-pink-500 ml-2"></span>
+                <span class="text-slate-400">Minority Class 1</span>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Right Analytics & HUD Panel -->
+    <aside class="absolute right-4 top-24 bottom-6 w-88 glass-panel rounded-2xl p-5 z-20 flex flex-col justify-between overflow-y-auto space-y-4 border-slate-800">
+        <div class="space-y-4">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+                <span class="text-xs font-semibold uppercase tracking-wider text-indigo-400 flex items-center gap-1.5">
+                    <i data-lucide="gauge" class="w-3.5 h-3.5"></i> Validation Metrics
+                </span>
+                <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-300">Logistic Regression</span>
+            </div>
+
+            <!-- Big Stat Summary -->
+            <div class="grid grid-cols-2 gap-2.5">
+                <div class="bg-slate-900/90 p-3 rounded-xl border border-slate-800">
+                    <div class="text-[10px] text-slate-400 uppercase tracking-wider">Mean Accuracy (μ)</div>
+                    <div class="text-xl font-bold font-mono text-purple-400 mt-1" id="stat-mean-acc">0.0000</div>
+                    <div class="text-[10px] text-slate-500 mt-0.5">Across all K folds</div>
+                </div>
+                <div class="bg-slate-900/90 p-3 rounded-xl border border-slate-800">
+                    <div class="text-[10px] text-slate-400 uppercase tracking-wider">Variance / Std (σ)</div>
+                    <div class="text-xl font-bold font-mono text-indigo-300 mt-1" id="stat-std-acc">±0.0000</div>
+                    <div class="text-[10px] text-slate-500 mt-0.5">Lower = More Stable</div>
+                </div>
+            </div>
+
+            <!-- Current Active Fold Breakdown -->
+            <div class="bg-slate-900/60 p-3.5 rounded-xl border border-amber-900/30 space-y-2">
+                <div class="flex justify-between items-center text-xs font-semibold text-amber-300">
+                    <span class="flex items-center gap-1.5">
+                        <i data-lucide="target" class="w-3.5 h-3.5"></i> Active Fold <span id="hud-fold-id">#1</span> Details
+                    </span>
+                    <span class="font-mono text-sm font-bold text-amber-400" id="hud-fold-score">0.0000</span>
+                </div>
+                <div class="grid grid-cols-3 gap-2 text-center pt-1 text-[11px]">
+                    <div class="bg-slate-800/80 p-1.5 rounded-lg">
+                        <div class="text-[9px] text-slate-400 uppercase">Test Samples</div>
+                        <div class="font-mono font-bold text-slate-200" id="hud-test-count">100</div>
+                    </div>
+                    <div class="bg-slate-800/80 p-1.5 rounded-lg">
+                        <div class="text-[9px] text-slate-400 uppercase">Class 1 (Pos)</div>
+                        <div class="font-mono font-bold text-pink-400" id="hud-pos-count">15</div>
+                    </div>
+                    <div class="bg-slate-800/80 p-1.5 rounded-lg">
+                        <div class="text-[9px] text-slate-400 uppercase">Class 0 (Neg)</div>
+                        <div class="font-mono font-bold text-cyan-400" id="hud-neg-count">85</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Per-Fold Scores Bar List -->
+            <div class="space-y-1.5">
+                <div class="flex justify-between text-xs text-slate-400 font-medium">
+                    <span>Individual Fold Performance</span>
+                    <span>Accuracy</span>
+                </div>
+                <div id="fold-bars-container" class="space-y-2">
+                    <!-- Populated dynamically -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Production Insight / Explanation -->
+        <div class="bg-gradient-to-br from-indigo-950/40 to-purple-950/40 p-3.5 rounded-xl border border-purple-500/20 text-xs text-slate-300 leading-relaxed">
+            <div class="font-bold text-purple-300 flex items-center gap-1.5 mb-1 text-[11px] uppercase tracking-wide">
+                <i data-lucide="lightbulb" class="w-3.5 h-3.5 text-amber-400"></i> Why Stratified CV?
+            </div>
+            <p class="text-[11px] text-slate-400" id="explanation-text">
+                With an 85:15 imbalanced dataset, standard K-Fold might create test folds that accidentally contain zero minority cases! Stratified K-Fold guarantees identical 85:15 class distribution across every single validation slice.
+            </p>
+        </div>
+    </aside>
+
+    <!-- Bottom Camera Instruction Toast -->
+    <div class="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 pointer-events-none">
+        <div class="glass-panel px-4 py-1.5 rounded-full text-[11px] text-slate-400 flex items-center gap-2 border-slate-800">
+            <span>🖱️ <strong>Left Click + Drag:</strong> Rotate 3D Scene</span>
+            <span class="text-slate-600">|</span>
+            <span>📜 <strong>Scroll:</strong> Zoom</span>
+            <span class="text-slate-600">|</span>
+            <span>🖱️ <strong>Right Click:</strong> Pan</span>
+        </div>
+    </div>
+
+    <!-- Application Script -->
+    <script>
+        // State
+        let K = 5;
+        let activeFold = 0; // 0-indexed
+        let strategy = 'stratified';
+        let majorityRatio = 0.85;
+        let autoPlayInterval = null;
+        let currentSceneView = 'slices'; // 'slices' | 'scatter' | 'podium'
+
+        // Dataset Mock & CV Engine
+        let dataset = [];
+        let folds = [];
+        let foldScores = [];
+
+        // Three.js Core Globals
+        let scene, camera, renderer, controls;
+        let slicesGroup, scatterGroup, podiumGroup;
+        let decisionPlane;
+
+        // Initialize 3D Engine
+        function initThree() {
+            const canvas = document.getElementById('webgl-canvas');
+            scene = new THREE.Scene();
+            scene.fog = new THREE.FogExp2(0x030712, 0.012);
+
+            camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 18, 38);
+
+            renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.shadowMap.enabled = true;
+
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.maxDistance = 80;
+            controls.minDistance = 5;
+
+            // Lights
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambientLight);
+
+            const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            dirLight.position.set(20, 40, 20);
+            scene.add(dirLight);
+
+            const purplePoint = new THREE.PointLight(0xa855f7, 2, 50);
+            purplePoint.position.set(-15, 10, 10);
+            scene.add(purplePoint);
+
+            const cyanPoint = new THREE.PointLight(0x06b6d4, 1.5, 50);
+            cyanPoint.position.set(15, -5, -10);
+            scene.add(cyanPoint);
+
+            // Grid Floor
+            const gridHelper = new THREE.GridHelper(60, 40, 0x374151, 0x111827);
+            gridHelper.position.y = -6;
+            scene.add(gridHelper);
+
+            // Container Groups
+            slicesGroup = new THREE.Group();
+            scatterGroup = new THREE.Group();
+            podiumGroup = new THREE.Group();
+
+            scene.add(slicesGroup);
+            scene.add(scatterGroup);
+            scene.add(podiumGroup);
+
+            scatterGroup.visible = false;
+            podiumGroup.visible = false;
+
+            window.addEventListener('resize', onWindowResize);
+            animate();
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        // Generate Synthetic Dataset matching Project 015
+        function generateData() {
+            dataset = [];
+            const N = 500;
+            const numClass1 = Math.round(N * (1 - majorityRatio));
+            const numClass0 = N - numClass1;
+
+            // Class 0: Negative samples clustered around (-1.5, 0, -1)
+            for (let i = 0; i < numClass0; i++) {
+                const x = -1.5 + (Math.random() - 0.5) * 4 + gaussianRandom() * 0.8;
+                const y = 0.5 + (Math.random() - 0.5) * 4 + gaussianRandom() * 0.8;
+                const z = -1.0 + (Math.random() - 0.5) * 4 + gaussianRandom() * 0.8;
+                dataset.push({ id: i, x, y, z, label: 0 });
+            }
+
+            // Class 1: Positive minority samples clustered around (2.5, 1.5, 1.5)
+            for (let i = 0; i < numClass1; i++) {
+                const x = 2.0 + (Math.random() - 0.5) * 3 + gaussianRandom() * 0.9;
+                const y = 1.0 + (Math.random() - 0.5) * 3 + gaussianRandom() * 0.9;
+                const z = 2.0 + (Math.random() - 0.5) * 3 + gaussianRandom() * 0.9;
+                dataset.push({ id: numClass0 + i, x, y, z, label: 1 });
+            }
+
+            // Partition into K folds according to strategy
+            folds = Array.from({ length: K }, () => []);
+
+            if (strategy === 'stratified') {
+                const class0 = dataset.filter(d => d.label === 0);
+                const class1 = dataset.filter(d => d.label === 1);
+                shuffle(class0);
+                shuffle(class1);
+
+                class0.forEach((item, idx) => folds[idx % K].push(item));
+                class1.forEach((item, idx) => folds[idx % K].push(item));
+            } else if (strategy === 'kfold') {
+                const all = [...dataset];
+                shuffle(all);
+                all.forEach((item, idx) => folds[idx % K].push(item));
+            } else if (strategy === 'timeseries') {
+                // Forward-chaining time slices
+                const chunkSize = Math.floor(dataset.length / K);
+                for (let k = 0; k < K; k++) {
+                    folds[k] = dataset.slice(k * chunkSize, (k + 1) * chunkSize);
+                }
+            }
+
+            // Compute realistic fold accuracy scores for Logistic Regression
+            foldScores = folds.map((testFold, idx) => {
+                const pos = testFold.filter(d => d.label === 1).length;
+                const neg = testFold.length - pos;
+                const actualRatio = pos / testFold.length;
+                // Score variation simulates actual classifier sensitivity to imbalance
+                const baseScore = 0.88;
+                const variance = (Math.sin(idx * 2.3 + K) * 0.035) + ((actualRatio - (1 - majorityRatio)) * 0.1);
+                return Math.min(0.98, Math.max(0.72, baseScore + variance));
+            });
+        }
+
+        // ------------------ 3D VISUAL BUILDERS ------------------
+
+        // Mode 1: 3D Fold Slices
+        function build3DSlices() {
+            while (slicesGroup.children.length > 0) {
+                slicesGroup.remove(slicesGroup.children[0]);
+            }
+
+            const totalWidth = 32;
+            const sliceWidth = totalWidth / K;
+            const startX = -totalWidth / 2 + sliceWidth / 2;
+
+            folds.forEach((fold, kIdx) => {
+                const isTest = kIdx === activeFold;
+                const posX = startX + kIdx * sliceWidth;
+                const posY = isTest ? 3.5 : 0; // Test fold levitates in 3D!
+                const posZ = isTest ? 4.5 : 0; // Moves forward towards camera
+
+                const foldObj = new THREE.Group();
+                foldObj.position.set(posX, posY, posZ);
+
+                // Slab outline / base platform
+                const slabGeom = new THREE.BoxGeometry(sliceWidth * 0.85, 0.4, 6);
+                const slabMat = new THREE.MeshStandardMaterial({
+                    color: isTest ? 0xf59e0b : 0x4f46e5,
+                    roughness: 0.3,
+                    metalness: 0.8,
+                    emissive: isTest ? 0xd97706 : 0x312e81,
+                    emissiveIntensity: isTest ? 0.6 : 0.2
+                });
+                const slabMesh = new THREE.Mesh(slabGeom, slabMat);
+                foldObj.add(slabMesh);
+
+                // Holographic Wireframe Cage for the Active Test Fold
+                if (isTest) {
+                    const wireGeom = new THREE.BoxGeometry(sliceWidth * 0.9, 5.5, 6.2);
+                    const wireMat = new THREE.MeshBasicMaterial({
+                        color: 0xfbbf24,
+                        wireframe: true,
+                        transparent: true,
+                        opacity: 0.4
+                    });
+                    const wireMesh = new THREE.Mesh(wireGeom, wireMat);
+                    wireMesh.position.y = 2.5;
+                    foldObj.add(wireMesh);
+                }
+
+                // Sample Voxels stacked on top of the slab
+                const posSamples = fold.filter(d => d.label === 1).length;
+                const negSamples = fold.length - posSamples;
+
+                const cols = 4;
+                const cubeSize = (sliceWidth * 0.7) / cols;
+
+                // Render samples up to visual limit (50 mini-cubes per fold)
+                const displayCount = Math.min(60, fold.length);
+                const posToRender = Math.round((posSamples / fold.length) * displayCount);
+
+                let renderedPos = 0;
+                for (let i = 0; i < displayCount; i++) {
+                    const isPositive = renderedPos < posToRender;
+                    renderedPos++;
+
+                    const geom = new THREE.BoxGeometry(cubeSize * 0.8, cubeSize * 0.8, cubeSize * 0.8);
+                    const mat = new THREE.MeshStandardMaterial({
+                        color: isPositive ? 0xec4899 : (isTest ? 0xfde047 : 0x818cf8),
+                        emissive: isPositive ? 0xbe185d : 0x000000,
+                        emissiveIntensity: isPositive ? 0.4 : 0,
+                        roughness: 0.4
+                    });
+                    const cube = new THREE.Mesh(geom, mat);
+
+                    const row = Math.floor(i / cols);
+                    const col = i % cols;
+                    cube.position.set(
+                        (col - cols / 2 + 0.5) * cubeSize,
+                        0.4 + (row % 6) * cubeSize,
+                        (Math.floor(row / 6) - 1.5) * cubeSize
+                    );
+                    foldObj.add(cube);
+                }
+
+                slicesGroup.add(foldObj);
+            });
+        }
+
+        // Mode 2: 3D Feature Space Scatter Plot
+        function build3DScatter() {
+            while (scatterGroup.children.length > 0) {
+                scatterGroup.remove(scatterGroup.children[0]);
+            }
+
+            const currentTestFold = folds[activeFold] || [];
+            const testIds = new Set(currentTestFold.map(d => d.id));
+
+            // Sphere geometry shared for efficiency
+            const dotGeom = new THREE.SphereGeometry(0.35, 12, 12);
+
+            dataset.forEach(d => {
+                const isTest = testIds.has(d.id);
+                let colorHex = d.label === 1 ? 0xec4899 : 0x06b6d4;
+
+                // Emphasize test points with amber/gold halo
+                if (isTest) {
+                    colorHex = d.label === 1 ? 0xf43f5e : 0xfbbf24;
+                }
+
+                const mat = new THREE.MeshStandardMaterial({
+                    color: colorHex,
+                    roughness: 0.2,
+                    metalness: 0.5,
+                    emissive: isTest ? colorHex : 0x000000,
+                    emissiveIntensity: isTest ? 0.7 : 0.0
+                });
+
+                const sphere = new THREE.Mesh(dotGeom, mat);
+                sphere.position.set(d.x * 3.5, d.y * 3.5, d.z * 3.5);
+
+                if (isTest) {
+                    sphere.scale.set(1.4, 1.4, 1.4);
+                }
+                scatterGroup.add(sphere);
+            });
+
+            // 3D Decision Boundary Plane (Translucent Glowing Plane)
+            const planeGeom = new THREE.PlaneGeometry(30, 30);
+            const planeMat = new THREE.MeshStandardMaterial({
+                color: 0x8b5cf6,
+                transparent: true,
+                opacity: 0.25,
+                side: THREE.DoubleSide,
+                roughness: 0.1,
+                metalness: 0.9
+            });
+            decisionPlane = new THREE.Mesh(planeGeom, planeMat);
+            decisionPlane.rotation.x = Math.PI / 3;
+            decisionPlane.rotation.y = -Math.PI / 6;
+            decisionPlane.position.set(0.5, 0, 0);
+            scatterGroup.add(decisionPlane);
+        }
+
+        // Mode 3: 3D Metric Podium
+        function build3DPodium() {
+            while (podiumGroup.children.length > 0) {
+                podiumGroup.remove(podiumGroup.children[0]);
+            }
+
+            const spacing = 4.5;
+            const startX = -((K - 1) * spacing) / 2;
+
+            foldScores.forEach((score, idx) => {
+                const isCurrent = idx === activeFold;
+                const height = score * 14;
+
+                const colGeom = new THREE.CylinderGeometry(1.4, 1.6, height, 32);
+                const colMat = new THREE.MeshStandardMaterial({
+                    color: isCurrent ? 0xf59e0b : 0x6366f1,
+                    roughness: 0.2,
+                    metalness: 0.8,
+                    emissive: isCurrent ? 0xd97706 : 0x312e81,
+                    emissiveIntensity: isCurrent ? 0.7 : 0.2
+                });
+
+                const cylinder = new THREE.Mesh(colGeom, colMat);
+                cylinder.position.set(startX + idx * spacing, height / 2 - 5, 0);
+                podiumGroup.add(cylinder);
+
+                // Glowing crown on top
+                const crownGeom = new THREE.TorusGeometry(1.5, 0.15, 16, 32);
+                const crownMat = new THREE.MeshBasicMaterial({ color: isCurrent ? 0xfef08a : 0xa5b4fc });
+                const crown = new THREE.Mesh(crownGeom, crownMat);
+                crown.rotation.x = Math.PI / 2;
+                crown.position.set(startX + idx * spacing, height - 5, 0);
+                podiumGroup.add(crown);
+            });
+
+            // Average score line/plane
+            const meanScore = foldScores.reduce((a, b) => a + b, 0) / foldScores.length;
+            const lineGeom = new THREE.BoxGeometry(K * spacing + 4, 0.1, 8);
+            const lineMat = new THREE.MeshBasicMaterial({ color: 0xec4899, transparent: true, opacity: 0.5 });
+            const meanMesh = new THREE.Mesh(lineGeom, lineMat);
+            meanMesh.position.set(0, meanScore * 14 - 5, 0);
+            podiumGroup.add(meanMesh);
+        }
+
+        // Switch View Modes
+        function setSceneView(mode) {
+            currentSceneView = mode;
+            document.querySelectorAll('.view-btn').forEach(btn => {
+                btn.className = 'view-btn px-3 py-1.5 rounded-xl text-xs font-medium transition flex items-center gap-1.5 text-slate-400 hover:text-white hover:bg-slate-800';
+            });
+            const activeBtn = document.getElementById(`btn-view-${mode}`);
+            if (activeBtn) {
+                activeBtn.className = 'view-btn px-3 py-1.5 rounded-xl text-xs font-medium transition flex items-center gap-1.5 bg-purple-600 text-white shadow-md shadow-purple-600/30';
+            }
+
+            slicesGroup.visible = (mode === 'slices');
+            scatterGroup.visible = (mode === 'scatter');
+            podiumGroup.visible = (mode === 'podium');
+
+            if (mode === 'slices') {
+                camera.position.set(0, 16, 36);
+            } else if (mode === 'scatter') {
+                camera.position.set(22, 18, 26);
+            } else if (mode === 'podium') {
+                camera.position.set(0, 12, 32);
+            }
+            controls.target.set(0, 0, 0);
+        }
+
+        function resetCamera() {
+            setSceneView(currentSceneView);
+        }
+
+        // Animation Loop
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+
+            // Gentle floating motion
+            const time = Date.now() * 0.001;
+            if (currentSceneView === 'slices' && slicesGroup.children[activeFold]) {
+                slicesGroup.children[activeFold].position.y = 3.5 + Math.sin(time * 3) * 0.3;
+            } else if (currentSceneView === 'scatter' && decisionPlane) {
+                decisionPlane.rotation.z = Math.sin(time * 0.5) * 0.05;
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        // ------------------ HUD & UI UPDATES ------------------
+        function updateUI() {
+            // Fold Stepper Buttons
+            const stepperContainer = document.getElementById('fold-stepper-container');
+            stepperContainer.innerHTML = Array.from({ length: K }, (_, idx) => {
+                const isActive = idx === activeFold;
+                const cls = isActive
+                    ? 'bg-amber-500 text-slate-950 font-bold shadow-md shadow-amber-500/30 ring-2 ring-amber-300'
+                    : 'bg-slate-800 text-slate-300 hover:bg-slate-700';
+                return `<button onclick="setActiveFold(${idx})" class="flex-1 py-1.5 rounded-lg text-xs transition ${cls}">F${idx + 1}</button>`;
+            }).join('');
+
+            // Active Fold HUD
+            document.getElementById('active-fold-tag').textContent = `Fold #${activeFold + 1} / ${K}`;
+            document.getElementById('hud-fold-id').textContent = `#${activeFold + 1}`;
+
+            const testFold = folds[activeFold] || [];
+            const posCount = testFold.filter(d => d.label === 1).length;
+            const negCount = testFold.length - posCount;
+            const currentScore = foldScores[activeFold] || 0;
+
+            document.getElementById('hud-fold-score').textContent = currentScore.toFixed(4);
+            document.getElementById('hud-test-count').textContent = testFold.length;
+            document.getElementById('hud-pos-count').textContent = posCount;
+            document.getElementById('hud-neg-count').textContent = negCount;
+
+            // Summary Metrics
+            const meanScore = foldScores.reduce((a, b) => a + b, 0) / foldScores.length;
+            const variance = foldScores.reduce((acc, val) => acc + Math.pow(val - meanScore, 2), 0) / foldScores.length;
+            const std = Math.sqrt(variance);
+
+            document.getElementById('stat-mean-acc').textContent = meanScore.toFixed(4);
+            document.getElementById('stat-std-acc').textContent = `±${std.toFixed(4)}`;
+
+            // Per Fold Bars
+            const barsContainer = document.getElementById('fold-bars-container');
+            barsContainer.innerHTML = foldScores.map((score, idx) => {
+                const isActive = idx === activeFold;
+                const pct = (score * 100).toFixed(1);
+                return `
+                <div class="space-y-1 cursor-pointer" onclick="setActiveFold(${idx})">
+                    <div class="flex justify-between text-[11px]">
+                        <span class="${isActive ? 'text-amber-300 font-bold' : 'text-slate-400'}">
+                            Fold #${idx + 1} ${isActive ? '👉 (Active Test)' : ''}
+                        </span>
+                        <span class="font-mono ${isActive ? 'text-amber-400 font-bold' : 'text-slate-300'}">${score.toFixed(4)}</span>
+                    </div>
+                    <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                        <div class="h-full rounded-full transition-all duration-300 ${isActive ? 'bg-amber-400' : 'bg-indigo-500'}" style="width: ${pct}%;"></div>
+                    </div>
+                </div>
+                `;
+            }).join('');
+
+            // Strategy explanation text
+            const explanationElem = document.getElementById('explanation-text');
+            if (strategy === 'stratified') {
+                explanationElem.innerHTML = `<strong>Stratified K-Fold:</strong> Preserves the exact ${Math.round(majorityRatio * 100)}:${Math.round((1 - majorityRatio) * 100)} minority class ratio in every fold. Eliminates sample imbalance skew.`;
+            } else if (strategy === 'kfold') {
+                explanationElem.innerHTML = `<strong>Standard K-Fold:</strong> Partitions data uniformly without respecting class balance. Notice how positive sample counts vary between folds!`;
+            } else {
+                explanationElem.innerHTML = `<strong>Time Series Split:</strong> Strictly prevents lookahead bias by validating sequentially on forward slices.`;
+            }
+        }
+
+        // Stepper / Control Handlers
+        function setActiveFold(idx) {
+            activeFold = idx;
+            build3DSlices();
+            build3DScatter();
+            build3DPodium();
+            updateUI();
+        }
+
+        function updateK(val) {
+            K = parseInt(val, 10);
+            document.getElementById('k-value-label').textContent = `${K} Folds`;
+            if (activeFold >= K) activeFold = 0;
+            regenerateExperiment();
+        }
+
+        function updateImbalance(val) {
+            majorityRatio = parseInt(val, 10) / 100;
+            document.getElementById('imbalance-label').textContent = `${Math.round(majorityRatio * 100)}% : ${Math.round((1 - majorityRatio) * 100)}%`;
+            regenerateExperiment();
+        }
+
+        function regenerateExperiment() {
+            strategy = document.getElementById('cv-strategy').value;
+            generateData();
+            build3DSlices();
+            build3DScatter();
+            build3DPodium();
+            updateUI();
+        }
+
+        function toggleAutoPlay() {
+            if (autoPlayInterval) {
+                clearInterval(autoPlayInterval);
+                autoPlayInterval = null;
+                document.getElementById('play-text').textContent = 'Auto Play';
+                document.getElementById('btn-autoplay').className = 'w-full py-2 rounded-xl text-xs font-semibold bg-purple-600/80 hover:bg-purple-600 transition flex items-center justify-center gap-1.5 text-white';
+            } else {
+                document.getElementById('play-text').textContent = 'Pause';
+                document.getElementById('btn-autoplay').className = 'w-full py-2 rounded-xl text-xs font-semibold bg-amber-600 hover:bg-amber-500 transition flex items-center justify-center gap-1.5 text-white';
+                autoPlayInterval = setInterval(() => {
+                    activeFold = (activeFold + 1) % K;
+                    setActiveFold(activeFold);
+                }, 1800);
+            }
+        }
+
+        // Math Helpers
+        function gaussianRandom() {
+            let u = 0, v = 0;
+            while(u === 0) u = Math.random();
+            while(v === 0) v = Math.random();
+            return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+        }
+
+        function shuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        // App Startup
+        window.onload = function() {
+            lucide.createIcons();
+            initThree();
+            regenerateExperiment();
+        };
+    </script>
+</body>
+</html>

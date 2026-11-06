@@ -3,56 +3,48 @@
 **Category:** Machine Learning - Basic Projects  
 **Difficulty:** Beginner  
 **Domain:** foundational machine learning  
-**Tags:** `Beginner`, `cross`, `validation`, `machine`, `learning`, `basic`
+**Tags:** `Beginner`, `cross`, `validation`, `machine`, `learning`, `basic`, `3d`, `three.js`, `streamlit`
 
 ---
 
 ## 📖 Project Overview
-This project builds a production-minded cross-validation implementation workflow inside the broader area of foundational machine learning. It follows the same pattern as a strong portfolio implementation: define the prediction or decision task, prepare a small baseline dataset, train a reliable model, evaluate it with appropriate metrics, and outline the path to a deployable application.
+This project builds a production-minded cross-validation implementation workflow inside foundational machine learning. It explores standard K-Fold, Stratified K-Fold, and Time Series splits on imbalanced classification datasets, featuring both a hardware-accelerated **Three.js 3D WebGL Visualizer** and a **Streamlit 3D Dashboard**.
 
 ---
 
 ## 🎯 Learning Objectives (What You Will Build)
 1. Translate cross-validation implementation from an idea into a measurable ML task.
-2. Build a reproducible Python baseline with clean preprocessing and evaluation.
-3. Identify the production risks that appear once the prototype meets real data.
+2. Build a reproducible Python baseline with clean preprocessing, scoring, and variance analysis.
+3. Compare **Stratified K-Fold** vs **Standard K-Fold** on imbalanced data (85:15 class distribution).
+4. Inspect training and validation partitions in **real-time 3D** space using WebGL / Three.js and Plotly 3D.
 
 ---
 
 ## 🏗️ Implementation Blueprint
 ### Problem Frame
-Define the target, inputs, and success criteria for cross-validation implementation.
+Evaluate classifier stability and variance across partitioned training and validation subsets.
 
 ### Baseline
-Create a simple, reproducible model before adding advanced architecture or tooling.
+Fit Logistic Regression on synthesized imbalanced feature data ($N=500$, $D=8$, $85\%:15\%$).
 
 ### Evaluation
-Use metrics that match the real-world decision cost, not just leaderboard accuracy.
+Compute mean accuracy, F1-score, and variance across $K$-folds.
 
-### Deployment
-Ship the model with validation, monitoring, documentation, and rollback strategy.
+### Deployment & 3D Visualization
+Interactive 3D representation of data fold slices, feature space, decision hyperplanes, and metric score podiums.
 
 ---
 
 ## 🛠️ Stack & Validation Plan
 
 ### Recommended Tools & Libraries
-- Python
+- Python 3.x
 - NumPy
-- pandas
 - scikit-learn
-- Matplotlib
-
-### Dataset Suggestions
-- Synthetic starter data
-- UCI datasets
-- Kaggle tabular datasets
-
-### Evaluation Metrics
-- Accuracy
-- F1-score
-- RMSE
-- Cross-validation score
+- pandas
+- Streamlit
+- Plotly
+- Three.js (WebGL 3D Engine)
 
 ---
 
@@ -71,18 +63,37 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 2. Run Implementation
+### 2. Run Baseline CLI
 ```bash
 python main.py
 ```
 
+### 3. Launch the 3D Interactive UI
+
+#### Option A: Standalone Hardware-Accelerated 3D Studio (Three.js WebGL)
+- Open **[`index.html`](index.html)** directly in any web browser.
+- **3D Features:**
+  - 🧱 **3D Fold Slices**: Watch active test folds levitate upward with holographic wireframes while training folds dock together.
+  - 🪐 **3D Feature Space**: 500 interactive samples in 3D with glowing test indicators and a 3D decision boundary plane.
+  - 🏛️ **3D Score Podiums**: Extruded 3D cylindrical podiums representing individual fold accuracies, with a glowing mean ($\mu$) laser plane.
+  - 🕹️ **Full OrbitControls**: Rotate 360°, pan, zoom, and auto-play fold cycles.
+
+#### Option B: Streamlit 3D ML Dashboard
+```bash
+streamlit run app.py
+```
+*(Or double-click `run_ui.bat` on Windows)*
+
+- Interactive parameter controls ($K$ slider, class imbalance weight, model selection).
+- Plotly 3D scatter plots with misclassification highlighting and decision surfaces.
+- Integrated embedding of the Three.js 3D Studio.
+
 ---
 
 ## 📈 Production Hardening & Next Steps
-- Replace the starter data with a real dataset such as Synthetic starter data.
-- Add experiment tracking so model versions, parameters, and metrics are auditable.
-- Create a small API or dashboard that exposes predictions to real users.
-- Add monitoring for drift, missing inputs, latency, and degraded model quality.
+- Verify Stratification when working with rare events (fraud detection, medical diagnosis).
+- Combine with Nested Cross-Validation for unbiased hyperparameter tuning.
+- Add GroupKFold when samples share cluster dependencies (e.g. patients, organizations).
 
 ---
 *Part of the 1,000 AI Projects Implementation Library.*

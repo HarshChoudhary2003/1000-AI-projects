@@ -1,2 +1,5 @@
 numpy
 scikit-learn
+pandas
+streamlit
+plotly
