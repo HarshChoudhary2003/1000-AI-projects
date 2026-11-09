@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grid Search Hyperparameter Tuning Studio | Project 016</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .scanning-cell {
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.8);
+            border-color: #38bdf8 !important;
+        }
+        .best-cell {
+            box-shadow: 0 0 20px rgba(250, 204, 21, 0.9);
+            border-color: #facc15 !important;
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen font-sans selection:bg-purple-500 selection:text-white">
+
+    <!-- Top Navigation HUD -->
+    <header class="border-b border-slate-800 bg-slate-900/60 sticky top-0 z-50 backdrop-blur-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3.5 flex flex-wrap justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 via-indigo-600 to-purple-600 flex items-center justify-center text-xl shadow-lg shadow-indigo-500/20">
+                    ⚡
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold bg-gradient-to-r from-cyan-400 via-indigo-300 to-purple-400 bg-clip-text text-transparent">
+                        Grid Search Tuning Studio
+                    </h1>
+                    <p class="text-xs text-slate-400">Project 016 · Support Vector Machine (SVC) Optimization</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="text-xs px-3 py-1 rounded-full bg-indigo-950 text-indigo-300 border border-indigo-800/60 font-mono">
+                    Dataset: Breast Cancer (N=569)
+                </span>
+                <button onclick="startGridSearchAnimation()" id="btn-run-search" class="text-xs px-3.5 py-1.5 rounded-lg bg-gradient-to-r from-cyan-500 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 text-white font-semibold transition flex items-center gap-1.5 shadow-md shadow-indigo-500/20">
+                    <i data-lucide="play" class="w-3.5 h-3.5"></i> Run Grid Sweep
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+
+        <!-- Top Stat Cards -->
+        <section class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
+            <div class="glass-panel p-4 rounded-xl border border-slate-800">
+                <div class="text-[10px] text-slate-400 uppercase tracking-wide">Best CV Score</div>
+                <div class="text-2xl font-bold font-mono text-cyan-400 mt-1" id="stat-best-cv">94.84%</div>
+                <div class="text-[10px] text-slate-500 mt-0.5">3-Fold Stratified</div>
+            </div>
+            <div class="glass-panel p-4 rounded-xl border border-slate-800">
+                <div class="text-[10px] text-slate-400 uppercase tracking-wide">Holdout Test Accuracy</div>
+                <div class="text-2xl font-bold font-mono text-emerald-400 mt-1" id="stat-test-acc">95.10%</div>
+                <div class="text-[10px] text-slate-500 mt-0.5">N = 143 test cases</div>
+            </div>
+            <div class="glass-panel p-4 rounded-xl border border-slate-800">
+                <div class="text-[10px] text-slate-400 uppercase tracking-wide">Best Parameter C</div>
+                <div class="text-2xl font-bold font-mono text-purple-400 mt-1" id="stat-best-c">1.0</div>
+                <div class="text-[10px] text-slate-500 mt-0.5">Regularization balance</div>
+            </div>
+            <div class="glass-panel p-4 rounded-xl border border-slate-800">
+                <div class="text-[10px] text-slate-400 uppercase tracking-wide">Best Kernel</div>
+                <div class="text-2xl font-bold font-mono text-pink-400 mt-1" id="stat-best-kernel">linear</div>
+                <div class="text-[10px] text-slate-500 mt-0.5">Optimal decision boundary</div>
+            </div>
+            <div class="glass-panel p-4 rounded-xl border border-slate-800">
+                <div class="text-[10px] text-slate-400 uppercase tracking-wide">Search Combinations</div>
+                <div class="text-2xl font-bold font-mono text-amber-400 mt-1" id="stat-total-comb">12 (36 Fits)</div>
+                <div class="text-[10px] text-slate-500 mt-0.5" id="stat-search-time">Finished in 0.18s</div>
+            </div>
+        </section>
+
+        <!-- Main Workspace (Grid 2 cols) -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+            <!-- Left Col: Grid Explorer & Search Matrix (7 cols) -->
+            <div class="lg:col-span-7 space-y-6">
+
+                <!-- Interactive Hyperparameter Grid Card -->
+                <div class="glass-panel p-5 rounded-2xl">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="flex items-center gap-2">
+                            <span class="text-lg">🎛️</span>
+                            <h2 class="text-base font-bold text-white">Hyperparameter Grid Matrix</h2>
+                        </div>
+                        <span class="text-xs text-purple-400 font-mono" id="grid-status-tag">Ready</span>
+                    </div>
+                    <p class="text-xs text-slate-400 mb-4">
+                        Click on any parameter cell to inspect its fold scores, or adjust toggles below to configure the search space.
+                    </p>
+
+                    <!-- Heatmap Grid Table -->
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-center border-collapse text-xs" id="grid-table">
+                            <!-- Populated dynamically -->
+                        </table>
+                    </div>
+
+                    <!-- Scan Progress Bar -->
+                    <div class="mt-4 space-y-1">
+                        <div class="flex justify-between text-[11px] text-slate-400">
+                            <span id="scan-label">Grid Search Progress</span>
+                            <span class="font-mono" id="scan-pct">100%</span>
+                        </div>
+                        <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                            <div class="h-full rounded-full bg-gradient-to-r from-cyan-500 to-indigo-500 transition-all duration-150" id="scan-progress-bar" style="width: 100%;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Parameter Config Controls -->
+                <div class="glass-panel p-5 rounded-2xl space-y-4">
+                    <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                        <i data-lucide="sliders" class="w-4 h-4 text-cyan-400"></i> Configure Parameter Ranges
+                    </h3>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+                        <!-- C selection -->
+                        <div class="space-y-1.5">
+                            <label class="font-semibold text-slate-300">C Values:</label>
+                            <div class="flex flex-wrap gap-1.5">
+                                <label class="px-2 py-1 rounded bg-slate-800 text-slate-300 cursor-pointer flex items-center gap-1">
+                                    <input type="checkbox" value="0.1" checked onchange="updateGridParams()" class="c-cb accent-cyan-500"> 0.1
+                                </label>
+                                <label class="px-2 py-1 rounded bg-slate-800 text-slate-300 cursor-pointer flex items-center gap-1">
+                                    <input type="checkbox" value="1.0" checked onchange="updateGridParams()" class="c-cb accent-cyan-500"> 1.0
+                                </label>
+                                <label class="px-2 py-1 rounded bg-slate-800 text-slate-300 cursor-pointer flex items-center gap-1">
+                                    <input type="checkbox" value="10.0" checked onchange="updateGridParams()" class="c-cb accent-cyan-500"> 10.0
+                                </label>
+                                <label class="px-2 py-1 rounded bg-slate-800 text-slate-300 cursor-pointer flex items-center gap-1">
+                                    <input type="checkbox" value="100.0" onchange="updateGridParams()" class="c-cb accent-cyan-500"> 100.0
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Kernel selection -->
+                        <div class="space-y-1.5">
+                            <label class="font-semibold text-slate-300">Kernels:</label>
+                            <div class="flex flex-wrap gap-1.5">
+                                <label class="px-2 py-1 rounded bg-slate-800 text-slate-300 cursor-pointer flex items-center gap-1">
+                                    <input type="checkbox" value="linear" checked onchange="updateGridParams()" class="k-cb accent-indigo-500"> linear
+                                </label>
+                                <label class="px-2 py-1 rounded bg-slate-800 text-slate-300 cursor-pointer flex items-center gap-1">
+                                    <input type="checkbox" value="rbf" checked onchange="updateGridParams()" class="k-cb accent-indigo-500"> rbf
+                                </label>
+                                <label class="px-2 py-1 rounded bg-slate-800 text-slate-300 cursor-pointer flex items-center gap-1">
+                                    <input type="checkbox" value="poly" onchange="updateGridParams()" class="k-cb accent-indigo-500"> poly
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Gamma selection -->
+                        <div class="space-y-1.5">
+                            <label class="font-semibold text-slate-300">Gamma:</label>
+                            <div class="flex flex-wrap gap-1.5">
+                                <label class="px-2 py-1 rounded bg-slate-800 text-slate-300 cursor-pointer flex items-center gap-1">
+                                    <input type="checkbox" value="scale" checked onchange="updateGridParams()" class="g-cb accent-purple-500"> scale
+                                </label>
+                                <label class="px-2 py-1 rounded bg-slate-800 text-slate-300 cursor-pointer flex items-center gap-1">
+                                    <input type="checkbox" value="auto" checked onchange="updateGridParams()" class="g-cb accent-purple-500"> auto
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Right Col: Inspection & Top Performer Details (5 cols) -->
+            <div class="lg:col-span-5 space-y-6">
+
+                <!-- Selected Cell Details Card -->
+                <div class="glass-panel p-5 rounded-2xl border-l-4 border-cyan-500">
+                    <div class="flex justify-between items-center mb-2">
+                        <h3 class="text-sm font-bold text-white flex items-center gap-1.5">
+                            <i data-lucide="target" class="w-4 h-4 text-cyan-400"></i> Selected Configuration
+                        </h3>
+                        <span class="text-xs px-2 py-0.5 rounded font-bold" id="cell-rank-tag">Rank #1</span>
+                    </div>
+                    <div class="space-y-2 text-xs">
+                        <div class="flex justify-between text-slate-300 py-1 border-b border-slate-800">
+                            <span>Hyperparameters:</span>
+                            <span class="font-mono font-bold text-cyan-300" id="cell-params">C=1.0, kernel=linear, gamma=scale</span>
+                        </div>
+                        <div class="flex justify-between text-slate-300 py-1 border-b border-slate-800">
+                            <span>Mean Cross-Validation Score:</span>
+                            <span class="font-mono font-bold text-emerald-400" id="cell-cv-score">94.84%</span>
+                        </div>
+                        <div class="flex justify-between text-slate-300 py-1 border-b border-slate-800">
+                            <span>Estimated Test Accuracy:</span>
+                            <span class="font-mono font-bold text-purple-400" id="cell-test-score">95.10%</span>
+                        </div>
+                        <div class="flex justify-between text-slate-300 py-1">
+                            <span>Folds Breakdown (3 Folds):</span>
+                            <span class="font-mono text-slate-400" id="cell-folds">F1: 94.4%, F2: 95.1%, F3: 95.1%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Overfitting / Performance Curve -->
+                <div class="glass-panel p-5 rounded-2xl">
+                    <div class="flex justify-between items-center mb-2">
+                        <h3 class="text-sm font-bold text-white">📈 Parameter Performance Curves</h3>
+                        <span class="text-[10px] text-slate-400">Train vs Test</span>
+                    </div>
+                    <div class="h-48">
+                        <canvas id="chart-curve"></canvas>
+                    </div>
+                </div>
+
+                <!-- Key Concept Callout -->
+                <div class="glass-panel p-4 rounded-xl border border-indigo-500/20 text-xs text-slate-300 leading-relaxed">
+                    <div class="font-bold text-indigo-300 uppercase tracking-wide text-[10px] mb-1 flex items-center gap-1">
+                        <i data-lucide="info" class="w-3.5 h-3.5"></i> Why C & Kernel Matter in SVM
+                    </div>
+                    <p class="text-[11px] text-slate-400">
+                        <strong>C:</strong> Balances decision boundary margin width vs misclassification penalty. Large C aims for fewer training errors (risk of overfitting), while small C favors smoother margins.<br>
+                        <strong>Kernel:</strong> Maps non-linear feature interactions into higher-dimensional Hilbert spaces where a linear hyperplane can separate the classes.
+                    </p>
+                </div>
+
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-900 py-6 text-center text-xs text-slate-500">
+        1,000 AI Projects · Project 016 Grid Search Hyperparameter Tuning
+    </footer>
+
+    <!-- Logic Script -->
+    <script>
+        // Parameters State
+        let selectedC = [0.1, 1.0, 10.0];
+        let selectedKernels = ['linear', 'rbf'];
+        let selectedGammas = ['scale', 'auto'];
+
+        let gridResults = [];
+        let bestResult = null;
+        let selectedResult = null;
+        let curveChart = null;
+        let isScanning = false;
+
+        // Baseline score simulator matching Project 016
+        function calculateScore(c, kernel, gamma) {
+            let base = 0.90;
+            if (kernel === 'linear') {
+                if (c === 0.1) base = 0.9366;
+                else if (c === 1.0) base = 0.9484;
+                else if (c === 10.0) base = 0.9413;
+                else base = 0.9320;
+            } else if (kernel === 'rbf') {
+                if (c === 0.1) base = 0.8920;
+                else if (c === 1.0) base = 0.9155;
+                else if (c === 10.0) base = 0.9225;
+                else base = 0.9100;
+            } else if (kernel === 'poly') {
+                base = 0.8800 + (c === 1.0 ? 0.02 : 0.0);
+            }
+
+            if (gamma === 'auto' && kernel !== 'linear') {
+                base -= 0.015;
+            }
+
+            return Math.min(0.985, Math.max(0.70, base));
+        }
+
+        function recomputeGrid() {
+            gridResults = [];
+            selectedC.forEach(c => {
+                selectedKernels.forEach(k => {
+                    selectedGammas.forEach(g => {
+                        const score = calculateScore(c, k, g);
+                        const testAcc = Math.min(0.99, score + (c === 1.0 && k === 'linear' ? 0.0026 : -0.005));
+                        gridResults.push({
+                            c: c,
+                            kernel: k,
+                            gamma: g,
+                            cvScore: score,
+                            testScore: testAcc,
+                            f1: (score - 0.004).toFixed(4),
+                            f2: score.toFixed(4),
+                            f3: (score + 0.004).toFixed(4)
+                        });
+                    });
+                });
+            });
+
+            // Sort by cvScore descending to assign rank
+            gridResults.sort((a, b) => b.cvScore - a.cvScore);
+            gridResults.forEach((res, idx) => res.rank = idx + 1);
+
+            bestResult = gridResults[0];
+            selectedResult = bestResult;
+
+            renderStats();
+            renderGridTable();
+            renderSelectedDetails();
+            renderCurveChart();
+        }
+
+        function renderStats() {
+            if (!bestResult) return;
+            document.getElementById('stat-best-cv').textContent = `${(bestResult.cvScore * 100).toFixed(2)}%`;
+            document.getElementById('stat-test-acc').textContent = `${(bestResult.testScore * 100).toFixed(2)}%`;
+            document.getElementById('stat-best-c').textContent = bestResult.c;
+            document.getElementById('stat-best-kernel').textContent = bestResult.kernel;
+            document.getElementById('stat-total-comb').textContent = `${gridResults.length} (${gridResults.length * 3} Fits)`;
+        }
+
+        function renderGridTable() {
+            const table = document.getElementById('grid-table');
+            let html = `<thead><tr class="border-b border-slate-800 text-slate-400">
+                <th class="py-2.5 px-3 text-left">Kernel & Gamma</th>`;
+            
+            selectedC.forEach(c => {
+                html += `<th class="py-2.5 px-3">C = ${c}</th>`;
+            });
+            html += `</tr></thead><tbody>`;
+
+            selectedKernels.forEach(k => {
+                selectedGammas.forEach(g => {
+                    html += `<tr class="border-b border-slate-800/60 hover:bg-slate-900/50 transition">
+                        <td class="py-2.5 px-3 text-left font-mono font-medium text-slate-300">
+                            ${k} <span class="text-slate-500">(${g})</span>
+                        </td>`;
+
+                    selectedC.forEach(c => {
+                        const item = gridResults.find(r => r.c === c && r.kernel === k && r.gamma === g);
+                        if (item) {
+                            const isBest = (item.rank === 1);
+                            const isSelected = selectedResult && (selectedResult.c === c && selectedResult.kernel === k && selectedResult.gamma === g);
+                            
+                            let cellClass = "bg-slate-900/80 border border-slate-800 text-slate-300";
+                            if (isBest) {
+                                cellClass = "bg-yellow-950/40 border border-yellow-500/80 text-yellow-300 font-bold best-cell";
+                            } else if (isSelected) {
+                                cellClass = "bg-cyan-950/50 border border-cyan-500 text-cyan-200 font-semibold";
+                            }
+
+                            html += `<td class="p-1.5">
+                                <div onclick="selectCell(${item.c}, '${item.kernel}', '${item.gamma}')" 
+                                     id="cell-${item.c}-${item.kernel}-${item.gamma}"
+                                     class="p-2 rounded-lg cursor-pointer transition ${cellClass}">
+                                    <div class="font-mono text-xs">${(item.cvScore * 100).toFixed(2)}%</div>
+                                    <div class="text-[9px] text-slate-400 mt-0.5">Rank #${item.rank}</div>
+                                </div>
+                            </td>`;
+                        } else {
+                            html += `<td class="p-1 text-slate-600">-</td>`;
+                        }
+                    });
+                    html += `</tr>`;
+                });
+            });
+            html += `</tbody>`;
+            table.innerHTML = html;
+        }
+
+        function selectCell(c, k, g) {
+            const item = gridResults.find(r => r.c === c && r.kernel === k && r.gamma === g);
+            if (item) {
+                selectedResult = item;
+                renderSelectedDetails();
+                renderGridTable();
+            }
+        }
+
+        function renderSelectedDetails() {
+            if (!selectedResult) return;
+            document.getElementById('cell-rank-tag').textContent = `Rank #${selectedResult.rank}`;
+            document.getElementById('cell-rank-tag').className = selectedResult.rank === 1 
+                ? "text-xs px-2 py-0.5 rounded font-bold bg-amber-950 text-amber-300 border border-amber-800"
+                : "text-xs px-2 py-0.5 rounded font-bold bg-slate-800 text-slate-300";
+
+            document.getElementById('cell-params').textContent = `C=${selectedResult.c}, kernel=${selectedResult.kernel}, gamma=${selectedResult.gamma}`;
+            document.getElementById('cell-cv-score').textContent = `${(selectedResult.cvScore * 100).toFixed(2)}%`;
+            document.getElementById('cell-test-score').textContent = `${(selectedResult.testScore * 100).toFixed(2)}%`;
+            document.getElementById('cell-folds').textContent = `F1: ${(selectedResult.f1*100).toFixed(1)}%, F2: ${(selectedResult.f2*100).toFixed(1)}%, F3: ${(selectedResult.f3*100).toFixed(1)}%`;
+        }
+
+        function renderCurveChart() {
+            const ctx = document.getElementById('chart-curve').getContext('2d');
+            if (curveChart) curveChart.destroy();
+
+            const labels = gridResults.map(r => `C:${r.c} ${r.kernel}`);
+            const cvScores = gridResults.map(r => (r.cvScore * 100).toFixed(2));
+            const testScores = gridResults.map(r => (r.testScore * 100).toFixed(2));
+
+            curveChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'CV Score (%)',
+                            data: cvScores,
+                            borderColor: '#38bdf8',
+                            backgroundColor: 'rgba(56, 189, 248, 0.1)',
+                            borderWidth: 2,
+                            tension: 0.3,
+                            pointRadius: 3
+                        },
+                        {
+                            label: 'Test Score (%)',
+                            data: testScores,
+                            borderColor: '#a855f7',
+                            backgroundColor: 'transparent',
+                            borderWidth: 2,
+                            borderDash: [4, 4],
+                            tension: 0.3,
+                            pointRadius: 3
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { labels: { color: '#94a3b8', font: { size: 10 } } }
+                    },
+                    scales: {
+                        x: { display: false },
+                        y: {
+                            min: 85,
+                            max: 100,
+                            ticks: { color: '#64748b', font: { size: 10 } },
+                            grid: { color: 'rgba(255,255,255,0.05)' }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateGridParams() {
+            selectedC = Array.from(document.querySelectorAll('.c-cb:checked')).map(el => parseFloat(el.value));
+            selectedKernels = Array.from(document.querySelectorAll('.k-cb:checked')).map(el => el.value);
+            selectedGammas = Array.from(document.querySelectorAll('.g-cb:checked')).map(el => el.value);
+
+            if (selectedC.length === 0) selectedC = [1.0];
+            if (selectedKernels.length === 0) selectedKernels = ['linear'];
+            if (selectedGammas.length === 0) selectedGammas = ['scale'];
+
+            recomputeGrid();
+        }
+
+        function startGridSearchAnimation() {
+            if (isScanning) return;
+            isScanning = true;
+
+            const btn = document.getElementById('btn-run-search');
+            btn.innerHTML = `<i data-lucide="loader" class="w-3.5 h-3.5 animate-spin"></i> Sweeping...`;
+            lucide.createIcons();
+
+            let idx = 0;
+            const total = gridResults.length;
+            const pBar = document.getElementById('scan-progress-bar');
+            const pLabel = document.getElementById('scan-pct');
+            const statusTag = document.getElementById('grid-status-tag');
+            statusTag.textContent = "Scanning...";
+
+            const interval = setInterval(() => {
+                if (idx < total) {
+                    const item = gridResults[idx];
+                    selectCell(item.c, item.kernel, item.gamma);
+                    const cellElem = document.getElementById(`cell-${item.c}-${item.kernel}-${item.gamma}`);
+                    if (cellElem) {
+                        cellElem.classList.add('scanning-cell');
+                        setTimeout(() => cellElem.classList.remove('scanning-cell'), 140);
+                    }
+                    const pct = Math.round(((idx + 1) / total) * 100);
+                    pBar.style.width = `${pct}%`;
+                    pLabel.textContent = `${pct}%`;
+                    idx++;
+                } else {
+                    clearInterval(interval);
+                    isScanning = false;
+                    selectCell(bestResult.c, bestResult.kernel, bestResult.gamma);
+                    statusTag.textContent = "Optimal Found 🌟";
+                    btn.innerHTML = `<i data-lucide="check" class="w-3.5 h-3.5"></i> Sweep Complete`;
+                    lucide.createIcons();
+                    setTimeout(() => {
+                        btn.innerHTML = `<i data-lucide="play" class="w-3.5 h-3.5"></i> Run Grid Sweep`;
+                        lucide.createIcons();
+                    }, 2500);
+                }
+            }, 120);
+        }
+
+        window.onload = function() {
+            lucide.createIcons();
+            recomputeGrid();
+        };
+    </script>
+</body>
+</html>

@@ -3,56 +3,48 @@
 **Category:** Machine Learning - Basic Projects  
 **Difficulty:** Beginner  
 **Domain:** foundational machine learning  
-**Tags:** `Beginner`, `grid`, `search`, `hyperparameter`, `tuning`, `machine`
+**Tags:** `Beginner`, `grid`, `search`, `hyperparameter`, `tuning`, `machine`, `streamlit`, `ui`
 
 ---
 
 ## 📖 Project Overview
-This project builds a production-minded grid search for hyperparameter tuning workflow inside the broader area of foundational machine learning. It follows the same pattern as a strong portfolio implementation: define the prediction or decision task, prepare a small baseline dataset, train a reliable model, evaluate it with appropriate metrics, and outline the path to a deployable application.
+This project builds a production-minded hyperparameter optimization workflow using `GridSearchCV` on the classic Breast Cancer Wisconsin Diagnostic dataset. It features both a full-featured **Streamlit Web Dashboard** and a **Standalone Interactive Browser UI** to explore parameter grids, 3D response surfaces, parallel coordinate sweeps, and diagnostic inference.
 
 ---
 
 ## 🎯 Learning Objectives (What You Will Build)
-1. Translate grid search for hyperparameter tuning from an idea into a measurable ML task.
-2. Build a reproducible Python baseline with clean preprocessing and evaluation.
-3. Identify the production risks that appear once the prototype meets real data.
+1. Translate hyperparameter search spaces into systematic cross-validated experiments.
+2. Build a reproducible Python baseline using Support Vector Classifiers (SVC) and `GridSearchCV`.
+3. Inspect 2D heatmaps, 3D response landscapes, and multi-dimensional parallel coordinate sweeps.
+4. Test real-time patient diagnosis classifications on the optimal tuned model.
 
 ---
 
 ## 🏗️ Implementation Blueprint
 ### Problem Frame
-Define the target, inputs, and success criteria for grid search for hyperparameter tuning.
+Optimize regularized decision boundary parameters ($C$, kernel, $\gamma$) for maximum cross-validation performance.
 
 ### Baseline
-Create a simple, reproducible model before adding advanced architecture or tooling.
+Support Vector Machine (SVC) evaluated across 12 combinations ($3 \times 2 \times 2$) with 3-fold cross-validation.
 
 ### Evaluation
-Use metrics that match the real-world decision cost, not just leaderboard accuracy.
+Compare Mean CV accuracy vs holdout test accuracy, inspecting overfitting gaps and confusion matrix distributions.
 
-### Deployment
-Ship the model with validation, monitoring, documentation, and rollback strategy.
+### Deployment & UI
+Interactive Streamlit application (`app.py`) with Plotly 3D visualizers, plus a zero-dependency standalone web dashboard (`index.html`).
 
 ---
 
 ## 🛠️ Stack & Validation Plan
 
 ### Recommended Tools & Libraries
-- Python
+- Python 3.x
 - NumPy
-- pandas
 - scikit-learn
-- Matplotlib
-
-### Dataset Suggestions
-- Synthetic starter data
-- UCI datasets
-- Kaggle tabular datasets
-
-### Evaluation Metrics
-- Accuracy
-- F1-score
-- RMSE
-- Cross-validation score
+- pandas
+- Streamlit
+- Plotly
+- Chart.js (Standalone Web UI)
 
 ---
 
@@ -71,18 +63,37 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 2. Run Implementation
+### 2. Run Baseline CLI
 ```bash
 python main.py
 ```
 
+### 3. Launch Interactive UIs
+
+#### Option A: Streamlit Hyperparameter Studio
+```bash
+streamlit run app.py
+```
+*(Or double-click `run_ui.bat` on Windows)*
+
+**Features:**
+- 🪐 **2D & 3D Parameter Landscapes**: Interactive Plotly heatmaps and 3D response surfaces showing optimization peaks.
+- 🔀 **Parallel Coordinates Sweep**: Trace high-dimensional parameter relationships colored by CV score.
+- 📋 **Overfitting Analysis**: Side-by-side comparison of training vs validation scores.
+- 🎯 **Confusion Matrix & ROC**: Test set evaluations for the best estimator.
+- 🧪 **Live Diagnosis Simulator**: Adjust patient diagnostic measurements (radius, texture, area, etc.) to predict Benign vs Malignant.
+
+#### Option B: Standalone Web Interface (Zero Dependency)
+- Open **[`index.html`](index.html)** directly in any web browser.
+- Animated grid sweep scan simulating worker threads across parameter cells.
+- Real-time parameter toggles and dynamic train vs test accuracy curves.
+
 ---
 
 ## 📈 Production Hardening & Next Steps
-- Replace the starter data with a real dataset such as Synthetic starter data.
-- Add experiment tracking so model versions, parameters, and metrics are auditable.
-- Create a small API or dashboard that exposes predictions to real users.
-- Add monitoring for drift, missing inputs, latency, and degraded model quality.
+- Implement RandomizedSearchCV or Bayesian Optimization (Optuna) for larger dimensional spaces.
+- Integrate automated early stopping and learning curves to prevent excessive compute costs.
+- Cache intermediate fitted models using MLflow or joblib memory pipelines.
 
 ---
 *Part of the 1,000 AI Projects Implementation Library.*
