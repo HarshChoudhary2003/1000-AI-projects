@@ -518,3 +518,4 @@ with tab_predict:
             </div>
         </div>
         """, unsafe_allow_html=True)
+

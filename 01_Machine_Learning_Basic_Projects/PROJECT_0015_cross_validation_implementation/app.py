@@ -366,3 +366,4 @@ with tab_webgl:
         components.html(html_content, height=650, scrolling=False)
     else:
         st.warning("index.html not found.")
+

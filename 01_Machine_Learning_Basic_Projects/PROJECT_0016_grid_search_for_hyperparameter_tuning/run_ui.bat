@@ -8,3 +8,4 @@ echo Starting Streamlit Hyperparameter Tuning Dashboard...
 echo.
 streamlit run app.py
 pause
+
