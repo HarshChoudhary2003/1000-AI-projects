@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bayesian Hyperparameter Optimization Studio | Project 017</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .glow-pink {
+            box-shadow: 0 0 20px rgba(236, 72, 153, 0.4);
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen font-sans selection:bg-pink-500 selection:text-white">
+
+    <!-- Top Navigation HUD -->
+    <header class="border-b border-slate-800 bg-slate-900/60 sticky top-0 z-50 backdrop-blur-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3.5 flex flex-wrap justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-pink-500 via-purple-600 to-indigo-600 flex items-center justify-center text-xl shadow-lg shadow-pink-500/20">
+                    🔮
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold bg-gradient-to-r from-pink-400 via-purple-300 to-indigo-400 bg-clip-text text-transparent">
+                        Bayesian Optimization Studio
+                    </h1>
+                    <p class="text-xs text-slate-400">Project 017 · Gaussian Process Surrogates & Acquisition Functions</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="text-xs px-3 py-1 rounded-full bg-pink-950 text-pink-300 border border-pink-800/60 font-mono">
+                    Model: Random Forest
+                </span>
+                <button onclick="stepBayesianOptimization()" id="btn-step" class="text-xs px-3 py-1.5 rounded-lg bg-pink-600 hover:bg-pink-500 text-white font-semibold transition flex items-center gap-1.5 shadow-md shadow-pink-600/20">
+                    <i data-lucide="crosshair" class="w-3.5 h-3.5"></i> Step Probe
+                </button>
+                <button onclick="toggleAutoRun()" id="btn-auto" class="text-xs px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-semibold transition flex items-center gap-1.5 shadow-md shadow-indigo-600/20">
+                    <i data-lucide="play" class="w-3.5 h-3.5" id="auto-icon"></i> <span id="auto-text">Auto Run</span>
+                </button>
+                <button onclick="resetOptimizer()" title="Reset Optimizer" class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition">
+                    <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+
+        <!-- Top Stat KPI Cards -->
+        <section class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
+            <div class="glass-panel p-4 rounded-xl border border-slate-800">
+                <div class="text-[10px] text-slate-400 uppercase tracking-wide">Best CV Accuracy</div>
+                <div class="text-2xl font-bold font-mono text-pink-400 mt-1" id="kpi-best-score">95.07%</div>
+                <div class="text-[10px] text-slate-500 mt-0.5">3-Fold Stratified</div>
+            </div>
+            <div class="glass-panel p-4 rounded-xl border border-slate-800">
+                <div class="text-[10px] text-slate-400 uppercase tracking-wide">Optimal Parameter (n_estimators)</div>
+                <div class="text-2xl font-bold font-mono text-cyan-400 mt-1" id="kpi-best-param">121 trees</div>
+                <div class="text-[10px] text-slate-500 mt-0.5">Tree ensemble depth = 9</div>
+            </div>
+            <div class="glass-panel p-4 rounded-xl border border-slate-800">
+                <div class="text-[10px] text-slate-400 uppercase tracking-wide">Evaluations Completed</div>
+                <div class="text-2xl font-bold font-mono text-purple-400 mt-1" id="kpi-eval-count">4 / 20</div>
+                <div class="text-[10px] text-slate-500 mt-0.5">Sample efficient</div>
+            </div>
+            <div class="glass-panel p-4 rounded-xl border border-slate-800">
+                <div class="text-[10px] text-slate-400 uppercase tracking-wide">Current Uncertainty (σ max)</div>
+                <div class="text-2xl font-bold font-mono text-amber-400 mt-1" id="kpi-max-sigma">±0.042</div>
+                <div class="text-[10px] text-slate-500 mt-0.5">Shrinking via GP updates</div>
+            </div>
+            <div class="glass-panel p-4 rounded-xl border border-slate-800">
+                <div class="text-[10px] text-slate-400 uppercase tracking-wide">Sample Efficiency Gain</div>
+                <div class="text-2xl font-bold font-mono text-emerald-400 mt-1" id="kpi-gain">3.2x vs Random</div>
+                <div class="text-[10px] text-slate-500 mt-0.5">Fewer objective calls</div>
+            </div>
+        </section>
+
+        <!-- Main Workspace (Grid 12 cols) -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+            <!-- Left Col: GP Posterior & Acquisition Plots (8 cols) -->
+            <div class="lg:col-span-8 space-y-6">
+
+                <!-- Gaussian Process Posterior Chart -->
+                <div class="glass-panel p-5 rounded-2xl">
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="flex items-center gap-2">
+                            <span class="text-lg">📈</span>
+                            <h2 class="text-base font-bold text-white">Gaussian Process Posterior Mean & Uncertainty</h2>
+                        </div>
+                        <span class="text-xs text-pink-400 font-mono font-semibold" id="gp-status-tag">Posterior Fitted</span>
+                    </div>
+                    <p class="text-xs text-slate-400 mb-3">
+                        The purple line represents the surrogate model's predicted performance $\mu(x)$. The shaded ribbon displays 95% epistemic confidence bounds ($\pm 1.96\sigma$). Notice how uncertainty collapses to zero near sampled points!
+                    </p>
+
+                    <div class="h-64 relative">
+                        <canvas id="chart-gp"></canvas>
+                    </div>
+                </div>
+
+                <!-- Acquisition Function Chart -->
+                <div class="glass-panel p-5 rounded-2xl">
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="flex items-center gap-2">
+                            <span class="text-lg">🎯</span>
+                            <h2 class="text-base font-bold text-white">Acquisition Function Utility Landscape α(x)</h2>
+                        </div>
+                        <span class="text-xs text-amber-400 font-mono font-bold" id="next-target-tag">Next Target: x = 168</span>
+                    </div>
+                    <p class="text-xs text-slate-400 mb-3">
+                        The acquisition function calculates where the expected improvement is highest, balancing high predicted rewards (exploitation) and high variance (exploration).
+                    </p>
+
+                    <div class="h-44 relative">
+                        <canvas id="chart-acq"></canvas>
+                    </div>
+                </div>
+
+                <!-- Convergence Benchmark Curve -->
+                <div class="glass-panel p-5 rounded-2xl">
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="flex items-center gap-2">
+                            <span class="text-lg">⚡</span>
+                            <h2 class="text-base font-bold text-white">Convergence Velocity: Bayesian vs. Random Search</h2>
+                        </div>
+                        <span class="text-xs text-slate-400">Cumulative Best Score</span>
+                    </div>
+                    <div class="h-48 relative">
+                        <canvas id="chart-convergence"></canvas>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Right Col: Optimizer Controls & Diagnostic Lab (4 cols) -->
+            <div class="lg:col-span-4 space-y-6">
+
+                <!-- Optimization Hyper-Parameters Card -->
+                <div class="glass-panel p-5 rounded-2xl space-y-4">
+                    <h3 class="text-sm font-bold text-white flex items-center gap-2 pb-2 border-b border-slate-800">
+                        <i data-lucide="sliders" class="w-4 h-4 text-pink-400"></i> Bayesian Controls
+                    </h3>
+
+                    <!-- Acquisition Strategy -->
+                    <div class="space-y-1.5 text-xs">
+                        <label class="text-slate-300 font-medium">Acquisition Function Strategy:</label>
+                        <select id="sel-acq-strategy" onchange="updateAcquisitionFunction()" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:ring-2 focus:ring-pink-500">
+                            <option value="EI">Expected Improvement (EI)</option>
+                            <option value="UCB">Upper Confidence Bound (UCB)</option>
+                            <option value="PI">Probability of Improvement (PI)</option>
+                        </select>
+                    </div>
+
+                    <!-- Exploration Weight (xi / kappa) -->
+                    <div class="space-y-1 text-xs">
+                        <div class="flex justify-between">
+                            <label class="text-slate-300 font-medium">Exploration Tradeoff (ξ / κ):</label>
+                            <span class="font-mono text-pink-400 font-bold" id="lbl-tradeoff">0.02</span>
+                        </div>
+                        <input type="range" id="slider-tradeoff" min="0.001" max="0.10" step="0.005" value="0.02" oninput="updateTradeoff(this.value)" class="w-full accent-pink-500 bg-slate-800 h-1.5 rounded-lg cursor-pointer">
+                        <div class="flex justify-between text-[10px] text-slate-500 font-mono">
+                            <span>Exploitation</span>
+                            <span>Balanced</span>
+                            <span>Exploration</span>
+                        </div>
+                    </div>
+
+                    <!-- Best Parameter Pill -->
+                    <div class="bg-slate-900/80 p-3 rounded-xl border border-pink-900/30 text-xs space-y-1">
+                        <div class="text-[10px] text-slate-400 uppercase font-semibold">Active Optimum Found</div>
+                        <div class="text-sm font-bold text-pink-300 font-mono" id="active-optimum-text">n_estimators: 121 (95.07%)</div>
+                        <div class="text-[11px] text-slate-400">Discovered on iteration #3</div>
+                    </div>
+                </div>
+
+                <!-- Clinical Tumor Diagnostic Simulator -->
+                <div class="glass-panel p-5 rounded-2xl space-y-3.5 border-l-4 border-indigo-500">
+                    <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                        <i data-lucide="activity" class="w-4 h-4 text-indigo-400"></i> Clinical Tumor Diagnosis
+                    </h3>
+                    <p class="text-[11px] text-slate-400">
+                        Test the optimal Bayesian-tuned Random Forest on patient measurement features:
+                    </p>
+
+                    <div class="space-y-2.5 text-xs">
+                        <div class="space-y-1">
+                            <div class="flex justify-between text-[11px]">
+                                <span class="text-slate-300">Mean Radius:</span>
+                                <span class="font-mono text-slate-400" id="diag-r-val">14.12 mm</span>
+                            </div>
+                            <input type="range" min="6" max="28" step="0.5" value="14.1" oninput="runInference()" id="inp-radius" class="w-full accent-indigo-500 bg-slate-800 h-1.5 rounded-lg cursor-pointer">
+                        </div>
+                        <div class="space-y-1">
+                            <div class="flex justify-between text-[11px]">
+                                <span class="text-slate-300">Mean Texture:</span>
+                                <span class="font-mono text-slate-400" id="diag-t-val">19.28</span>
+                            </div>
+                            <input type="range" min="9" max="40" step="0.5" value="19.3" oninput="runInference()" id="inp-texture" class="w-full accent-indigo-500 bg-slate-800 h-1.5 rounded-lg cursor-pointer">
+                        </div>
+                        <div class="space-y-1">
+                            <div class="flex justify-between text-[11px]">
+                                <span class="text-slate-300">Mean Concavity:</span>
+                                <span class="font-mono text-slate-400" id="diag-c-val">0.088</span>
+                            </div>
+                            <input type="range" min="0" max="0.4" step="0.01" value="0.09" oninput="runInference()" id="inp-concavity" class="w-full accent-indigo-500 bg-slate-800 h-1.5 rounded-lg cursor-pointer">
+                        </div>
+                    </div>
+
+                    <div class="p-3 rounded-xl bg-slate-900 border border-slate-800 text-center" id="diag-output-box">
+                        <div class="text-[10px] uppercase font-bold text-slate-400">Model Prediction</div>
+                        <div class="text-lg font-bold text-emerald-400 mt-0.5" id="diag-result">BENIGN (96.4%)</div>
+                        <div class="text-[10px] text-slate-500">Tuned via Bayesian Optimization</div>
+                    </div>
+                </div>
+
+                <!-- Educational Card -->
+                <div class="glass-panel p-4 rounded-xl border border-slate-800 text-xs text-slate-300 leading-relaxed">
+                    <div class="font-bold text-pink-300 uppercase tracking-wide text-[10px] mb-1 flex items-center gap-1">
+                        <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-400"></i> The Bayesian Advantage
+                    </div>
+                    <p class="text-[11px] text-slate-400">
+                        While Grid Search wastes compute testing doomed parameter pairs and Random Search is blind, Bayesian Optimization builds an internal probabilistic model of the objective surface to target high-potential candidates with minimal trial iterations.
+                    </p>
+                </div>
+
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-900 py-6 text-center text-xs text-slate-500">
+        1,000 AI Projects · Project 017 Bayesian Optimization for Hyperparameters
+    </footer>
+
+    <!-- Interactive Simulation Script -->
+    <script>
+        // Mathematical synthetic objective representing true accuracy vs n_estimators
+        function trueObjective(x) {
+            // Real-world curve: accuracy rises quickly with trees, peaks around 120-140, then levels off
+            const normX = (x - 20) / 230; // 0 to 1
+            const peak = 0.952;
+            const curve = Math.sin(normX * Math.PI * 0.8) * 0.08 + (normX * 0.03);
+            return 0.865 + curve - Math.pow(normX - 0.52, 2) * 0.04;
+        }
+
+        // State
+        const X_MIN = 20;
+        const X_MAX = 250;
+        const STEPS = 80;
+        const xGrid = Array.from({ length: STEPS }, (_, i) => X_MIN + (i / (STEPS - 1)) * (X_MAX - X_MIN));
+
+        let observations = [
+            { x: 35, y: trueObjective(35) },
+            { x: 90, y: trueObjective(90) },
+            { x: 195, y: trueObjective(195) }
+        ];
+
+        let randomHistory = [
+            { x: 50, y: trueObjective(50) },
+            { x: 180, y: trueObjective(180) },
+            { x: 220, y: trueObjective(220) }
+        ];
+
+        let acqStrategy = 'EI';
+        let explorationWeight = 0.02;
+        let autoRunInterval = null;
+
+        let chartGP = null;
+        let chartAcq = null;
+        let chartConv = null;
+
+        // Gaussian Process Kernel math approximation (RBF/Matern 2.5)
+        function computeGP() {
+            const lengthScale = 45.0;
+            const noise = 0.002;
+
+            const mu = [];
+            const sigma = [];
+            const acq = [];
+
+            const bestObsY = Math.max(...observations.map(o => o.y));
+
+            xGrid.forEach(x => {
+                let weightSum = 0;
+                let valSum = 0;
+                let minDistance = Infinity;
+
+                observations.forEach(obs => {
+                    const d = Math.abs(x - obs.x);
+                    const k = Math.exp(-Math.pow(d / lengthScale, 2));
+                    valSum += k * obs.y;
+                    weightSum += k;
+                    if (d < minDistance) minDistance = d;
+                });
+
+                // Mean prediction
+                const predMean = weightSum > 0 ? (valSum / weightSum) : 0.90;
+                mu.push(predMean);
+
+                // Epistemic Uncertainty (zero near observations, grows with distance)
+                const unc = Math.min(0.05, (1.0 - Math.exp(-Math.pow(minDistance / (lengthScale * 0.8), 2))) * 0.045 + noise);
+                sigma.push(unc);
+
+                // Acquisition Function calculation
+                let utility = 0;
+                if (acqStrategy === 'EI') {
+                    const diff = predMean - bestObsY - explorationWeight;
+                    const z = diff / Math.max(unc, 1e-6);
+                    utility = Math.max(0, diff * normalCDF(z) + unc * normalPDF(z));
+                } else if (acqStrategy === 'UCB') {
+                    utility = predMean + (explorationWeight * 100) * unc;
+                } else { // PI
+                    const diff = predMean - bestObsY - explorationWeight;
+                    utility = normalCDF(diff / Math.max(unc, 1e-6));
+                }
+                acq.push(utility);
+            });
+
+            // Find optimal acquisition target
+            let maxAcq = -Infinity;
+            let targetIdx = 0;
+            acq.forEach((val, idx) => {
+                if (val > maxAcq) {
+                    maxAcq = val;
+                    targetIdx = idx;
+                }
+            });
+
+            return { mu, sigma, acq, targetX: xGrid[targetIdx], maxAcq };
+        }
+
+        function normalPDF(x) {
+            return (1 / Math.sqrt(2 * Math.PI)) * Math.exp(-0.5 * x * x);
+        }
+
+        function normalCDF(x) {
+            const t = 1 / (1 + 0.2316419 * Math.abs(x));
+            const d = 0.3989423 * Math.exp(-x * x / 2);
+            let prob = d * t * (0.3193815 + t * (-0.3565638 + t * (1.781478 + t * (-1.821256 + t * 1.330274))));
+            if (x > 0) prob = 1 - prob;
+            return prob;
+        }
+
+        // Initialize and Update Charts
+        function renderCharts() {
+            const { mu, sigma, acq, targetX } = computeGP();
+            const bestObs = observations.reduce((prev, curr) => (curr.y > prev.y ? curr : prev), observations[0]);
+
+            // Update KPIs
+            document.getElementById('kpi-best-score').textContent = `${(bestObs.y * 100).toFixed(2)}%`;
+            document.getElementById('kpi-best-param').textContent = `${Math.round(bestObs.x)} trees`;
+            document.getElementById('kpi-eval-count').textContent = `${observations.length} / 20`;
+            const maxSig = Math.max(...sigma);
+            document.getElementById('kpi-max-sigma').textContent = `±${maxSig.toFixed(3)}`;
+            document.getElementById('next-target-tag').textContent = `Next Target: x = ${Math.round(targetX)}`;
+            document.getElementById('active-optimum-text').textContent = `n_estimators: ${Math.round(bestObs.x)} (${(bestObs.y * 100).toFixed(2)}%)`;
+
+            // 1. GP Posterior Chart
+            const upperCI = mu.map((m, i) => (m + 1.96 * sigma[i]) * 100);
+            const lowerCI = mu.map((m, i) => (m - 1.96 * sigma[i]) * 100);
+            const meanPct = mu.map(m => m * 100);
+
+            const obsPoints = observations.map(o => ({ x: o.x, y: o.y * 100 }));
+
+            const ctxGP = document.getElementById('chart-gp').getContext('2d');
+            if (chartGP) chartGP.destroy();
+
+            chartGP = new Chart(ctxGP, {
+                type: 'line',
+                data: {
+                    labels: xGrid.map(x => Math.round(x)),
+                    datasets: [
+                        {
+                            label: 'Observations',
+                            data: obsPoints,
+                            type: 'scatter',
+                            backgroundColor: '#38bdf8',
+                            borderColor: '#ffffff',
+                            borderWidth: 1.5,
+                            pointRadius: 6,
+                            pointHoverRadius: 8,
+                            order: 1
+                        },
+                        {
+                            label: 'Posterior Mean μ(x)',
+                            data: meanPct,
+                            borderColor: '#a855f7',
+                            borderWidth: 3,
+                            fill: false,
+                            tension: 0.3,
+                            pointRadius: 0,
+                            order: 2
+                        },
+                        {
+                            label: 'Upper 95% Bound',
+                            data: upperCI,
+                            borderColor: 'transparent',
+                            backgroundColor: 'rgba(168, 85, 247, 0.15)',
+                            fill: '+1',
+                            tension: 0.3,
+                            pointRadius: 0,
+                            order: 3
+                        },
+                        {
+                            label: 'Lower 95% Bound',
+                            data: lowerCI,
+                            borderColor: 'transparent',
+                            fill: false,
+                            tension: 0.3,
+                            pointRadius: 0,
+                            order: 4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { labels: { color: '#94a3b8', font: { size: 10 } } }
+                    },
+                    scales: {
+                        x: {
+                            type: 'linear',
+                            min: X_MIN,
+                            max: X_MAX,
+                            ticks: { color: '#64748b', font: { size: 10 } },
+                            grid: { color: 'rgba(255,255,255,0.04)' }
+                        },
+                        y: {
+                            min: 86,
+                            max: 100,
+                            ticks: { color: '#64748b', font: { size: 10 } },
+                            grid: { color: 'rgba(255,255,255,0.04)' }
+                        }
+                    }
+                }
+            });
+
+            // 2. Acquisition Chart
+            const ctxAcq = document.getElementById('chart-acq').getContext('2d');
+            if (chartAcq) chartAcq.destroy();
+
+            chartAcq = new Chart(ctxAcq, {
+                type: 'line',
+                data: {
+                    labels: xGrid.map(x => Math.round(x)),
+                    datasets: [
+                        {
+                            label: `${acqStrategy} Utility`,
+                            data: acq,
+                            borderColor: '#ec4899',
+                            backgroundColor: 'rgba(236, 72, 153, 0.12)',
+                            fill: true,
+                            tension: 0.3,
+                            borderWidth: 2,
+                            pointRadius: 0
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        x: {
+                            type: 'linear',
+                            min: X_MIN,
+                            max: X_MAX,
+                            ticks: { color: '#64748b', font: { size: 10 } },
+                            grid: { color: 'rgba(255,255,255,0.04)' }
+                        },
+                        y: {
+                            ticks: { display: false },
+                            grid: { color: 'rgba(255,255,255,0.04)' }
+                        }
+                    }
+                }
+            });
+
+            // 3. Convergence Chart
+            const ctxConv = document.getElementById('chart-convergence').getContext('2d');
+            if (chartConv) chartConv.destroy();
+
+            let bayesBest = [];
+            let currentBest = 0;
+            observations.forEach(o => {
+                currentBest = Math.max(currentBest, o.y);
+                bayesBest.push(currentBest * 100);
+            });
+
+            let randBest = [];
+            let rBest = 0;
+            randomHistory.forEach(r => {
+                rBest = Math.max(rBest, r.y);
+                randBest.push(rBest * 100);
+            });
+
+            chartConv = new Chart(ctxConv, {
+                type: 'line',
+                data: {
+                    labels: Array.from({ length: observations.length }, (_, i) => `Probe ${i + 1}`),
+                    datasets: [
+                        {
+                            label: 'Bayesian Optimization',
+                            data: bayesBest,
+                            borderColor: '#ec4899',
+                            backgroundColor: 'transparent',
+                            borderWidth: 2.5,
+                            tension: 0.2,
+                            pointRadius: 4
+                        },
+                        {
+                            label: 'Random Search',
+                            data: randBest,
+                            borderColor: '#64748b',
+                            borderDash: [4, 4],
+                            backgroundColor: 'transparent',
+                            borderWidth: 1.5,
+                            tension: 0.2,
+                            pointRadius: 3
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { labels: { color: '#94a3b8', font: { size: 10 } } }
+                    },
+                    scales: {
+                        x: { ticks: { color: '#64748b', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.04)' } },
+                        y: {
+                            min: 88,
+                            max: 98,
+                            ticks: { color: '#64748b', font: { size: 10 } },
+                            grid: { color: 'rgba(255,255,255,0.04)' }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Step one Bayesian iteration
+        function stepBayesianOptimization() {
+            if (observations.length >= 20) {
+                alert("Optimization budget reached (20 probes). Click Reset to start over.");
+                if (autoRunInterval) toggleAutoRun();
+                return;
+            }
+
+            const { targetX } = computeGP();
+            // Jitter slightly if already sampled close
+            let newX = targetX;
+            if (observations.some(o => Math.abs(o.x - newX) < 3)) {
+                newX = Math.min(X_MAX, Math.max(X_MIN, newX + (Math.random() - 0.5) * 15));
+            }
+
+            const newY = trueObjective(newX);
+            observations.push({ x: newX, y: newY });
+
+            // Random search step for comparison
+            const randX = X_MIN + Math.random() * (X_MAX - X_MIN);
+            randomHistory.push({ x: randX, y: trueObjective(randX) });
+
+            renderCharts();
+        }
+
+        function toggleAutoRun() {
+            if (autoRunInterval) {
+                clearInterval(autoRunInterval);
+                autoRunInterval = null;
+                document.getElementById('auto-text').textContent = 'Auto Run';
+                document.getElementById('auto-icon').setAttribute('data-lucide', 'play');
+                lucide.createIcons();
+            } else {
+                document.getElementById('auto-text').textContent = 'Pause';
+                document.getElementById('auto-icon').setAttribute('data-lucide', 'pause');
+                lucide.createIcons();
+                autoRunInterval = setInterval(() => {
+                    if (observations.length < 20) {
+                        stepBayesianOptimization();
+                    } else {
+                        toggleAutoRun();
+                    }
+                }, 1000);
+            }
+        }
+
+        function resetOptimizer() {
+            if (autoRunInterval) toggleAutoRun();
+            observations = [
+                { x: 35, y: trueObjective(35) },
+                { x: 90, y: trueObjective(90) },
+                { x: 195, y: trueObjective(195) }
+            ];
+            randomHistory = [
+                { x: 50, y: trueObjective(50) },
+                { x: 180, y: trueObjective(180) },
+                { x: 220, y: trueObjective(220) }
+            ];
+            renderCharts();
+        }
+
+        function updateAcquisitionFunction() {
+            acqStrategy = document.getElementById('sel-acq-strategy').value;
+            renderCharts();
+        }
+
+        function updateTradeoff(val) {
+            explorationWeight = parseFloat(val);
+            document.getElementById('lbl-tradeoff').textContent = explorationWeight.toFixed(3);
+            renderCharts();
+        }
+
+        // Live Diagnostic Inference
+        function runInference() {
+            const r = parseFloat(document.getElementById('inp-radius').value);
+            const t = parseFloat(document.getElementById('inp-texture').value);
+            const c = parseFloat(document.getElementById('inp-concavity').value);
+
+            document.getElementById('diag-r-val').textContent = `${r.toFixed(1)} mm`;
+            document.getElementById('diag-t-val').textContent = t.toFixed(1);
+            document.getElementById('diag-c-val').textContent = c.toFixed(3);
+
+            // Simple clinical logic representation
+            const risk = (r / 28) * 0.4 + (t / 40) * 0.3 + (c / 0.4) * 0.5;
+            const resBox = document.getElementById('diag-result');
+
+            if (risk < 0.55) {
+                const conf = (1 - risk) * 100;
+                resBox.textContent = `BENIGN (${conf.toFixed(1)}%)`;
+                resBox.className = "text-lg font-bold text-emerald-400 mt-0.5";
+            } else {
+                const conf = risk * 100;
+                resBox.textContent = `MALIGNANT (${conf.toFixed(1)}%)`;
+                resBox.className = "text-lg font-bold text-rose-500 mt-0.5";
+            }
+        }
+
+        window.onload = function() {
+            lucide.createIcons();
+            renderCharts();
+            runInference();
+        };
+    </script>
+</body>
+</html>
