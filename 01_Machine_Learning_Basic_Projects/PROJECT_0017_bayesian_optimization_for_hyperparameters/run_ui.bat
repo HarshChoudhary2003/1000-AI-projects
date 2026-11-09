@@ -8,3 +8,4 @@ echo Starting Streamlit Bayesian Optimization Studio...
 echo.
 streamlit run app.py
 pause
+
