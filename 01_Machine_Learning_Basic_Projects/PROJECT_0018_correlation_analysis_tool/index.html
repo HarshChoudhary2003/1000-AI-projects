@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Correlation Analysis Studio | Project 018</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .matrix-cell:hover {
+            transform: scale(1.04);
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.5);
+            z-index: 10;
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen font-sans selection:bg-cyan-500 selection:text-white">
+
+    <!-- Top Navigation HUD -->
+    <header class="border-b border-slate-800 bg-slate-900/60 sticky top-0 z-50 backdrop-blur-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3.5 flex flex-wrap justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 via-sky-600 to-indigo-600 flex items-center justify-center text-xl shadow-lg shadow-cyan-500/20">
+                    📊
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold bg-gradient-to-r from-cyan-400 via-sky-300 to-indigo-400 bg-clip-text text-transparent">
+                        Correlation Analysis Studio
+                    </h1>
+                    <p class="text-xs text-slate-400">Project 018 · Pearson, Spearman & Multicollinearity Diagnostics</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="text-xs px-3 py-1 rounded-full bg-cyan-950 text-cyan-300 border border-cyan-800/60 font-mono">
+                    Sample Size: N = 100
+                </span>
+                <button onclick="resetToBaseline()" class="text-xs px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition flex items-center gap-1.5">
+                    <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i> Reset Data
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+
+        <!-- Top Stat KPI Cards -->
+        <section class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
+            <div class="glass-panel p-4 rounded-xl border border-slate-800">
+                <div class="text-[10px] text-slate-400 uppercase tracking-wide">Strongest Positive</div>
+                <div class="text-2xl font-bold font-mono text-cyan-400 mt-1" id="kpi-pos-val">+0.993</div>
+                <div class="text-[10px] text-slate-500 mt-0.5">Metric_A ↔ Metric_B</div>
+            </div>
+            <div class="glass-panel p-4 rounded-xl border border-slate-800">
+                <div class="text-[10px] text-slate-400 uppercase tracking-wide">Strongest Negative</div>
+                <div class="text-2xl font-bold font-mono text-rose-400 mt-1" id="kpi-neg-val">-0.960</div>
+                <div class="text-[10px] text-slate-500 mt-0.5">Metric_A ↔ Metric_C</div>
+            </div>
+            <div class="glass-panel p-4 rounded-xl border border-slate-800">
+                <div class="text-[10px] text-slate-400 uppercase tracking-wide">Selected Pair (X vs Y)</div>
+                <div class="text-2xl font-bold font-mono text-purple-400 mt-1" id="kpi-pair-r">+0.993</div>
+                <div class="text-[10px] text-slate-500 mt-0.5" id="kpi-pair-names">Metric_A vs Metric_B</div>
+            </div>
+            <div class="glass-panel p-4 rounded-xl border border-slate-800">
+                <div class="text-[10px] text-slate-400 uppercase tracking-wide">Variance Explained (R²)</div>
+                <div class="text-2xl font-bold font-mono text-emerald-400 mt-1" id="kpi-r2">98.6%</div>
+                <div class="text-[10px] text-slate-500 mt-0.5">Linear Goodness of Fit</div>
+            </div>
+            <div class="glass-panel p-4 rounded-xl border border-slate-800">
+                <div class="text-[10px] text-slate-400 uppercase tracking-wide">Multicollinearity Risk</div>
+                <div class="text-2xl font-bold font-mono text-amber-400 mt-1" id="kpi-collinear">High (VIF &gt; 10)</div>
+                <div class="text-[10px] text-slate-500 mt-0.5">Metric_A &amp; B collinear</div>
+            </div>
+        </section>
+
+        <!-- Main Workspace (Grid 12 cols) -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+            <!-- Left Col: Heatmap & Matrix Controls (6 cols) -->
+            <div class="lg:col-span-6 space-y-6">
+
+                <!-- Correlation Heatmap Card -->
+                <div class="glass-panel p-5 rounded-2xl">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="flex items-center gap-2">
+                            <span class="text-lg">🔥</span>
+                            <h2 class="text-base font-bold text-white">Pairwise Correlation Matrix</h2>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <select id="sel-method" onchange="updateMatrix()" class="bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-slate-200 focus:outline-none focus:ring-1 focus:ring-cyan-500">
+                                <option value="pearson">Pearson (Linear)</option>
+                                <option value="spearman">Spearman (Rank)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <p class="text-xs text-slate-400 mb-4">
+                        Click on any matrix cell to visualize its scatter distribution and regression line on the right:
+                    </p>
+
+                    <!-- Heatmap Grid -->
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-center border-collapse text-xs" id="heatmap-table">
+                            <!-- Populated dynamically -->
+                        </table>
+                    </div>
+
+                    <!-- Legend Gradient -->
+                    <div class="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between text-[11px] text-slate-400">
+                        <span>-1.0 (Inverse)</span>
+                        <div class="w-48 h-2.5 rounded-full bg-gradient-to-r from-rose-500 via-slate-800 to-cyan-500"></div>
+                        <span>+1.0 (Positive)</span>
+                    </div>
+                </div>
+
+                <!-- Live Data Generator & Noise Tweaker -->
+                <div class="glass-panel p-5 rounded-2xl space-y-4">
+                    <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                        <i data-lucide="sliders" class="w-4 h-4 text-cyan-400"></i> Interactive Data Tweaker
+                    </h3>
+                    <p class="text-xs text-slate-400">
+                        Drag sliders to alter slope and noise level. Watch the correlation values and scatter plot update in real-time!
+                    </p>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                        <div class="space-y-1">
+                            <div class="flex justify-between">
+                                <span class="text-slate-300 font-medium">Metric_B Slope:</span>
+                                <span class="font-mono text-cyan-400" id="lbl-b-slope">2.50</span>
+                            </div>
+                            <input type="range" min="0.5" max="5.0" step="0.1" value="2.5" id="inp-b-slope" oninput="regenerateData()" class="w-full accent-cyan-500 bg-slate-800 h-1.5 rounded-lg cursor-pointer">
+                        </div>
+                        <div class="space-y-1">
+                            <div class="flex justify-between">
+                                <span class="text-slate-300 font-medium">Metric_B Noise (σ):</span>
+                                <span class="font-mono text-cyan-400" id="lbl-b-noise">5.0</span>
+                            </div>
+                            <input type="range" min="0" max="35" step="1" value="5" id="inp-b-noise" oninput="regenerateData()" class="w-full accent-cyan-500 bg-slate-800 h-1.5 rounded-lg cursor-pointer">
+                        </div>
+                        <div class="space-y-1">
+                            <div class="flex justify-between">
+                                <span class="text-slate-300 font-medium">Metric_C Slope:</span>
+                                <span class="font-mono text-rose-400" id="lbl-c-slope">-1.80</span>
+                            </div>
+                            <input type="range" min="-4.0" max="-0.2" step="0.1" value="-1.8" id="inp-c-slope" oninput="regenerateData()" class="w-full accent-rose-500 bg-slate-800 h-1.5 rounded-lg cursor-pointer">
+                        </div>
+                        <div class="space-y-1">
+                            <div class="flex justify-between">
+                                <span class="text-slate-300 font-medium">Metric_C Noise (σ):</span>
+                                <span class="font-mono text-rose-400" id="lbl-c-noise">8.0</span>
+                            </div>
+                            <input type="range" min="0" max="40" step="1" value="8" id="inp-c-noise" oninput="regenerateData()" class="w-full accent-rose-500 bg-slate-800 h-1.5 rounded-lg cursor-pointer">
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Right Col: Scatter Plot & Multicollinearity (6 cols) -->
+            <div class="lg:col-span-6 space-y-6">
+
+                <!-- Bivariate Scatter Plot Card -->
+                <div class="glass-panel p-5 rounded-2xl">
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="flex items-center gap-2">
+                            <span class="text-lg">📈</span>
+                            <h2 class="text-base font-bold text-white" id="scatter-title">Metric_A vs Metric_B Scatter</h2>
+                        </div>
+                        <span class="text-xs px-2 py-0.5 rounded font-mono font-bold bg-cyan-950 text-cyan-300 border border-cyan-800" id="scatter-stat-tag">r = +0.993</span>
+                    </div>
+                    <p class="text-xs text-slate-400 mb-3" id="scatter-desc">
+                        Linear regression trendline ($y = mx + c$) with residual spread.
+                    </p>
+
+                    <div class="h-64 relative">
+                        <canvas id="chart-scatter"></canvas>
+                    </div>
+
+                    <!-- Regression Formula Pill -->
+                    <div class="mt-3 p-3 rounded-xl bg-slate-900/80 border border-slate-800 flex flex-wrap justify-between items-center text-xs">
+                        <span class="text-slate-400">OLS Equation: <strong class="text-cyan-300 font-mono" id="ols-equation">y = 2.49x + 0.12</strong></span>
+                        <span class="text-slate-400">P-Value: <strong class="text-emerald-400 font-mono" id="ols-pvalue">&lt; 0.0001</strong></span>
+                    </div>
+                </div>
+
+                <!-- Multicollinearity & VIF Explainer -->
+                <div class="glass-panel p-5 rounded-2xl space-y-3 border-l-4 border-amber-500">
+                    <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                        <i data-lucide="alert-triangle" class="w-4 h-4 text-amber-400"></i> Multicollinearity Diagnosis
+                    </h3>
+                    <p class="text-xs text-slate-300 leading-relaxed">
+                        When features like <strong class="text-cyan-300">Metric_A</strong> and <strong class="text-cyan-300">Metric_B</strong> have near-perfect correlation ($r \approx 0.99$), they introduce severe **redundancy** in downstream machine learning models (causing unstable coefficient weights and inflated standard errors).
+                    </p>
+                    <div class="grid grid-cols-2 gap-2 text-[11px] pt-1">
+                        <div class="p-2.5 rounded-lg bg-slate-900/90 border border-slate-800">
+                            <div class="text-slate-400">Pearson vs Spearman:</div>
+                            <div class="text-slate-300 mt-1">Pearson measures strict linear affinity; Spearman measures monotonic rank agreement.</div>
+                        </div>
+                        <div class="p-2.5 rounded-lg bg-slate-900/90 border border-slate-800">
+                            <div class="text-slate-400">Recommended Action:</div>
+                            <div class="text-amber-300 mt-1">Drop one redundant variable or apply PCA dimensionality reduction.</div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-900 py-6 text-center text-xs text-slate-500">
+        1,000 AI Projects · Project 018 Correlation Analysis Tool
+    </footer>
+
+    <!-- Interactive Logic Script -->
+    <script>
+        const VAR_NAMES = ['Metric_A', 'Metric_B', 'Metric_C', 'Noise'];
+        let selectedPair = ['Metric_A', 'Metric_B'];
+        let dataset = {};
+        let scatterChart = null;
+
+        // Linear algebra & correlation functions
+        function generateData(bSlope=2.5, bNoise=5.0, cSlope=-1.8, cNoise=8.0) {
+            const N = 100;
+            const x1 = [];
+            const x2 = [];
+            const x3 = [];
+            const x4 = [];
+
+            for (let i = 0; i < N; i++) {
+                const valA = (i / (N - 1)) * 50.0;
+                x1.push(valA);
+                x2.push(bSlope * valA + gaussianRandom() * bNoise);
+                x3.push(cSlope * valA + gaussianRandom() * cNoise);
+                x4.push(Math.random() * 100.0);
+            }
+
+            dataset = {
+                'Metric_A': x1,
+                'Metric_B': x2,
+                'Metric_C': x3,
+                'Noise': x4
+            };
+        }
+
+        function gaussianRandom() {
+            let u = 0, v = 0;
+            while(u === 0) u = Math.random();
+            while(v === 0) v = Math.random();
+            return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+        }
+
+        function pearsonCorr(x, y) {
+            const n = x.length;
+            const meanX = x.reduce((a, b) => a + b, 0) / n;
+            const meanY = y.reduce((a, b) => a + b, 0) / n;
+
+            let num = 0, denX = 0, denY = 0;
+            for (let i = 0; i < n; i++) {
+                const dx = x[i] - meanX;
+                const dy = y[i] - meanY;
+                num += dx * dy;
+                denX += dx * dx;
+                denY += dy * dy;
+            }
+            if (denX === 0 || denY === 0) return 0;
+            return num / Math.sqrt(denX * denY);
+        }
+
+        function spearmanCorr(x, y) {
+            const rankX = getRanks(x);
+            const rankY = getRanks(y);
+            return pearsonCorr(rankX, rankY);
+        }
+
+        function getRanks(arr) {
+            const sorted = arr.map((val, idx) => ({ val, idx })).sort((a, b) => a.val - b.val);
+            const ranks = new Array(arr.length);
+            for (let i = 0; i < sorted.length; i++) {
+                ranks[sorted[i].idx] = i + 1;
+            }
+            return ranks;
+        }
+
+        function computeMatrix(method) {
+            const matrix = {};
+            VAR_NAMES.forEach(v1 => {
+                matrix[v1] = {};
+                VAR_NAMES.forEach(v2 => {
+                    const r = method === 'pearson' 
+                        ? pearsonCorr(dataset[v1], dataset[v2]) 
+                        : spearmanCorr(dataset[v1], dataset[v2]);
+                    matrix[v1][v2] = r;
+                });
+            });
+            return matrix;
+        }
+
+        function renderMatrix() {
+            const method = document.getElementById('sel-method').value;
+            const matrix = computeMatrix(method);
+            const table = document.getElementById('heatmap-table');
+
+            let html = `<thead><tr class="border-b border-slate-800 text-slate-400"><th class="py-2.5 px-3 text-left">Variable</th>`;
+            VAR_NAMES.forEach(v => {
+                html += `<th class="py-2.5 px-2">${v}</th>`;
+            });
+            html += `</tr></thead><tbody>`;
+
+            VAR_NAMES.forEach(v1 => {
+                html += `<tr class="border-b border-slate-800/60 hover:bg-slate-900/40 transition">
+                    <td class="py-2.5 px-3 text-left font-mono font-medium text-slate-300">${v1}</td>`;
+
+                VAR_NAMES.forEach(v2 => {
+                    const r = matrix[v1][v2];
+                    const isSelected = (selectedPair[0] === v1 && selectedPair[1] === v2) || (selectedPair[0] === v2 && selectedPair[1] === v1);
+                    
+                    // Compute cell background color based on r [-1, 1]
+                    let bg = "";
+                    let textColor = "#f8fafc";
+                    if (r > 0) {
+                        const alpha = Math.min(0.85, Math.abs(r));
+                        bg = `rgba(14, 165, 233, ${alpha})`;
+                    } else if (r < 0) {
+                        const alpha = Math.min(0.85, Math.abs(r));
+                        bg = `rgba(244, 63, 94, ${alpha})`;
+                    } else {
+                        bg = "rgba(30, 41, 59, 0.5)";
+                    }
+
+                    const outline = isSelected ? "ring-2 ring-purple-400 z-10" : "";
+
+                    html += `<td class="p-1">
+                        <div onclick="selectPair('${v1}', '${v2}')" 
+                             class="matrix-cell p-2.5 rounded-lg cursor-pointer transition text-xs font-mono font-bold ${outline}" 
+                             style="background-color: ${bg}; color: ${textColor};">
+                            ${r >= 0 ? '+' : ''}${r.toFixed(3)}
+                        </div>
+                    </td>`;
+                });
+                html += `</tr>`;
+            });
+
+            html += `</tbody>`;
+            table.innerHTML = html;
+
+            // Update KPI cards
+            const rAB = matrix['Metric_A']['Metric_B'];
+            const rAC = matrix['Metric_A']['Metric_C'];
+            document.getElementById('kpi-pos-val').textContent = `${rAB >= 0 ? '+' : ''}${rAB.toFixed(3)}`;
+            document.getElementById('kpi-neg-val').textContent = `${rAC.toFixed(3)}`;
+        }
+
+        function selectPair(v1, v2) {
+            selectedPair = [v1, v2];
+            renderMatrix();
+            renderScatter();
+        }
+
+        function renderScatter() {
+            const v1 = selectedPair[0];
+            const v2 = selectedPair[1];
+            const x = dataset[v1];
+            const y = dataset[v2];
+
+            const r = pearsonCorr(x, y);
+            const r2 = (r * r * 100).toFixed(1);
+
+            document.getElementById('scatter-title').textContent = `${v1} vs. ${v2} Scatter`;
+            document.getElementById('scatter-stat-tag').textContent = `r = ${r >= 0 ? '+' : ''}${r.toFixed(3)}`;
+            document.getElementById('kpi-pair-r').textContent = `${r >= 0 ? '+' : ''}${r.toFixed(3)}`;
+            document.getElementById('kpi-pair-names').textContent = `${v1} vs ${v2}`;
+            document.getElementById('kpi-r2').textContent = `${r2}%`;
+
+            // Compute OLS trendline
+            const n = x.length;
+            const meanX = x.reduce((a, b) => a + b, 0) / n;
+            const meanY = y.reduce((a, b) => a + b, 0) / n;
+            let num = 0, den = 0;
+            for (let i = 0; i < n; i++) {
+                num += (x[i] - meanX) * (y[i] - meanY);
+                den += (x[i] - meanX) * (x[i] - meanX);
+            }
+            const slope = den !== 0 ? (num / den) : 0;
+            const intercept = meanY - slope * meanX;
+
+            document.getElementById('ols-equation').textContent = `y = ${slope.toFixed(2)}x + ${intercept.toFixed(2)}`;
+
+            const minX = Math.min(...x);
+            const maxX = Math.max(...x);
+            const trendlinePoints = [
+                { x: minX, y: slope * minX + intercept },
+                { x: maxX, y: slope * maxX + intercept }
+            ];
+
+            const scatterPoints = x.map((val, idx) => ({ x: val, y: y[idx] }));
+
+            const ctx = document.getElementById('chart-scatter').getContext('2d');
+            if (scatterChart) scatterChart.destroy();
+
+            scatterChart = new Chart(ctx, {
+                type: 'scatter',
+                data: {
+                    datasets: [
+                        {
+                            label: `${v1} vs ${v2}`,
+                            data: scatterPoints,
+                            backgroundColor: '#38bdf8',
+                            borderColor: '#ffffff',
+                            borderWidth: 1,
+                            pointRadius: 4.5,
+                            pointHoverRadius: 7
+                        },
+                        {
+                            label: 'Linear OLS Trendline',
+                            data: trendlinePoints,
+                            type: 'line',
+                            borderColor: '#a855f7',
+                            borderWidth: 2.5,
+                            fill: false,
+                            pointRadius: 0
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { labels: { color: '#94a3b8', font: { size: 10 } } }
+                    },
+                    scales: {
+                        x: {
+                            title: { display: true, text: v1, color: '#64748b', font: { size: 11 } },
+                            ticks: { color: '#64748b', font: { size: 10 } },
+                            grid: { color: 'rgba(255,255,255,0.04)' }
+                        },
+                        y: {
+                            title: { display: true, text: v2, color: '#64748b', font: { size: 11 } },
+                            ticks: { color: '#64748b', font: { size: 10 } },
+                            grid: { color: 'rgba(255,255,255,0.04)' }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateMatrix() {
+            renderMatrix();
+            renderScatter();
+        }
+
+        function regenerateData() {
+            const bSlope = parseFloat(document.getElementById('inp-b-slope').value);
+            const bNoise = parseFloat(document.getElementById('inp-b-noise').value);
+            const cSlope = parseFloat(document.getElementById('inp-c-slope').value);
+            const cNoise = parseFloat(document.getElementById('inp-c-noise').value);
+
+            document.getElementById('lbl-b-slope').textContent = bSlope.toFixed(2);
+            document.getElementById('lbl-b-noise').textContent = bNoise.toFixed(1);
+            document.getElementById('lbl-c-slope').textContent = cSlope.toFixed(2);
+            document.getElementById('lbl-c-noise').textContent = cNoise.toFixed(1);
+
+            generateData(bSlope, bNoise, cSlope, cNoise);
+            renderMatrix();
+            renderScatter();
+        }
+
+        function resetToBaseline() {
+            document.getElementById('inp-b-slope').value = 2.5;
+            document.getElementById('inp-b-noise').value = 5.0;
+            document.getElementById('inp-c-slope').value = -1.8;
+            document.getElementById('inp-c-noise').value = 8.0;
+
+            document.getElementById('lbl-b-slope').textContent = "2.50";
+            document.getElementById('lbl-b-noise').textContent = "5.0";
+            document.getElementById('lbl-c-slope').textContent = "-1.80";
+            document.getElementById('lbl-c-noise').textContent = "8.0";
+
+            selectedPair = ['Metric_A', 'Metric_B'];
+            generateData(2.5, 5.0, -1.8, 8.0);
+            renderMatrix();
+            renderScatter();
+        }
+
+        window.onload = function() {
+            lucide.createIcons();
+            generateData(2.5, 5.0, -1.8, 8.0);
+            renderMatrix();
+            renderScatter();
+        };
+    </script>
+</body>
+</html>
