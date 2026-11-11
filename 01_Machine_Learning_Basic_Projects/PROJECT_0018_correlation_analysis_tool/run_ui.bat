@@ -8,3 +8,4 @@ echo Starting Streamlit Correlation Analysis Studio...
 echo.
 streamlit run app.py
 pause
+

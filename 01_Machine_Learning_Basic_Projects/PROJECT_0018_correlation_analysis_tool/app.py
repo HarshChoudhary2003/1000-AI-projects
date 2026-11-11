@@ -447,3 +447,4 @@ with tab_matrix_data:
     with col_d2:
         st.markdown("#### Sample Raw Records")
         st.dataframe(df.head(10), use_container_width=True)
+
