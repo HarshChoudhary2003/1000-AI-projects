@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confusion Matrix Diagnostic Studio | Project 019</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .cm-cell:hover {
+            transform: scale(1.04);
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.5);
+            z-index: 10;
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen font-sans selection:bg-emerald-500 selection:text-white">
+
+    <!-- Top Navigation HUD -->
+    <header class="border-b border-slate-800 bg-slate-900/60 sticky top-0 z-50 backdrop-blur-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3.5 flex flex-wrap justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-500 via-teal-600 to-cyan-600 flex items-center justify-center text-xl shadow-lg shadow-emerald-500/20">
+                    🎯
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400 bg-clip-text text-transparent">
+                        Confusion Matrix Diagnostic Studio
+                    </h1>
+                    <p class="text-xs text-slate-400">Project 019 · Error Decomposition & Per-Class Diagnostic Metrics</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <div class="flex items-center bg-slate-900 border border-slate-800 rounded-lg p-0.5 text-xs">
+                    <button onclick="setTask('iris')" id="btn-task-iris" class="px-3 py-1 rounded-md font-medium transition bg-emerald-600 text-white shadow-sm">
+                        Iris 3-Class
+                    </button>
+                    <button onclick="setTask('binary')" id="btn-task-binary" class="px-3 py-1 rounded-md font-medium transition text-slate-400 hover:text-white">
+                        Medical Binary
+                    </button>
+                </div>
+                <button onclick="resetMatrix()" title="Reset Matrix" class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition">
+                    <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+
+        <!-- Top Stat KPI Cards -->
+        <section class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
+            <div class="glass-panel p-4 rounded-xl border border-slate-800">
+                <div class="text-[10px] text-slate-400 uppercase tracking-wide">Overall Accuracy</div>
+                <div class="text-2xl font-bold font-mono text-emerald-400 mt-1" id="kpi-accuracy">100.0%</div>
+                <div class="text-[10px] text-slate-500 mt-0.5" id="kpi-samples-count">45 / 45 Correct</div>
+            </div>
+            <div class="glass-panel p-4 rounded-xl border border-slate-800">
+                <div class="text-[10px] text-slate-400 uppercase tracking-wide">Macro F1-Score</div>
+                <div class="text-2xl font-bold font-mono text-cyan-400 mt-1" id="kpi-f1">1.000</div>
+                <div class="text-[10px] text-slate-500 mt-0.5">Harmonic Mean P & R</div>
+            </div>
+            <div class="glass-panel p-4 rounded-xl border border-slate-800">
+                <div class="text-[10px] text-slate-400 uppercase tracking-wide">Cohen's Kappa (κ)</div>
+                <div class="text-2xl font-bold font-mono text-purple-400 mt-1" id="kpi-kappa">1.000</div>
+                <div class="text-[10px] text-slate-500 mt-0.5">Inter-rater agreement</div>
+            </div>
+            <div class="glass-panel p-4 rounded-xl border border-slate-800">
+                <div class="text-[10px] text-slate-400 uppercase tracking-wide">Total Misclassifications</div>
+                <div class="text-2xl font-bold font-mono text-slate-200 mt-1" id="kpi-errors">0 errors</div>
+                <div class="text-[10px] text-slate-500 mt-0.5" id="kpi-error-rate">0.0% Error Rate</div>
+            </div>
+            <div class="glass-panel p-4 rounded-xl border border-slate-800">
+                <div class="text-[10px] text-slate-400 uppercase tracking-wide">Selected Cell Outcome</div>
+                <div class="text-2xl font-bold font-mono text-amber-400 mt-1 truncate" id="kpi-selected-type">True Positive</div>
+                <div class="text-[10px] text-slate-500 mt-0.5" id="kpi-selected-label">setosa ↔ setosa</div>
+            </div>
+        </section>
+
+        <!-- Main Workspace (Grid 12 cols) -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+            <!-- Left Col: Interactive Matrix & Controls (6 cols) -->
+            <div class="lg:col-span-6 space-y-6">
+
+                <!-- Confusion Matrix Card -->
+                <div class="glass-panel p-5 rounded-2xl">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="flex items-center gap-2">
+                            <span class="text-lg">🎯</span>
+                            <h2 class="text-base font-bold text-white">Interactive Confusion Heatmap</h2>
+                        </div>
+                        <select id="sel-norm" onchange="renderMatrix()" class="bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-slate-200 focus:outline-none focus:ring-1 focus:ring-emerald-500">
+                            <option value="raw">Raw Counts (N)</option>
+                            <option value="row">Normalized by True (Recall %)</option>
+                            <option value="col">Normalized by Pred (Precision %)</option>
+                        </select>
+                    </div>
+                    <p class="text-xs text-slate-400 mb-4">
+                        Rows denote <strong>Actual Ground Truth</strong>; columns denote <strong>Predicted Output</strong>. Click any cell to inspect its diagnostic breakdown:
+                    </p>
+
+                    <!-- Heatmap Grid -->
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-center border-collapse text-xs" id="cm-table">
+                            <!-- Populated dynamically -->
+                        </table>
+                    </div>
+
+                    <!-- Legend Gradient -->
+                    <div class="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between text-[11px] text-slate-400">
+                        <span>Zero (0)</span>
+                        <div class="w-48 h-2.5 rounded-full bg-gradient-to-r from-slate-900 via-teal-900 to-emerald-500"></div>
+                        <span>Max Count</span>
+                    </div>
+                </div>
+
+                <!-- Binary Decision Threshold Slider (Visible in Binary Mode) -->
+                <div id="binary-controls-panel" class="glass-panel p-5 rounded-2xl space-y-3.5 hidden">
+                    <div class="flex justify-between items-center">
+                        <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                            <i data-lucide="sliders" class="w-4 h-4 text-cyan-400"></i> Decision Threshold (τ)
+                        </h3>
+                        <span class="font-mono text-cyan-400 font-bold text-xs" id="lbl-thresh">τ = 0.50</span>
+                    </div>
+                    <p class="text-xs text-slate-400">
+                        Lowering the threshold captures more positives (higher Sensitivity/Recall, but more False Alarms). Raising it increases Precision at the cost of missed cases.
+                    </p>
+                    <input type="range" min="0.05" max="0.95" step="0.05" value="0.50" id="inp-thresh" oninput="updateThreshold(this.value)" class="w-full accent-cyan-500 bg-slate-800 h-2 rounded-lg cursor-pointer">
+                    <div class="flex justify-between text-[10px] text-slate-500 font-mono">
+                        <span>τ = 0.05 (High Recall)</span>
+                        <span>τ = 0.50 (Balanced)</span>
+                        <span>τ = 0.95 (High Precision)</span>
+                    </div>
+                </div>
+
+                <!-- Matrix Explanation Anatomy -->
+                <div class="glass-panel p-4 rounded-xl border border-slate-800 text-xs text-slate-300 leading-relaxed">
+                    <div class="font-bold text-emerald-400 uppercase tracking-wide text-[10px] mb-1 flex items-center gap-1">
+                        <i data-lucide="info" class="w-3.5 h-3.5"></i> Matrix Interpretation Key
+                    </div>
+                    <p class="text-[11px] text-slate-400">
+                        <strong>Diagonal Elements ($C_{i,i}$):</strong> Accurate classifications where prediction matches reality.<br>
+                        <strong>Off-Diagonal Elements ($C_{i,j}, i \neq j$):</strong> Errors. In binary classification, off-diagonals represent False Positives (Type I errors, top-right) and False Negatives (Type II errors, bottom-left).
+                    </p>
+                </div>
+
+            </div>
+
+            <!-- Right Col: Cell Details & Per-Class Bar Chart (6 cols) -->
+            <div class="lg:col-span-6 space-y-6">
+
+                <!-- Selected Cell Diagnostics Card -->
+                <div class="glass-panel p-5 rounded-2xl border-l-4 border-emerald-500">
+                    <div class="flex justify-between items-center mb-2">
+                        <h3 class="text-sm font-bold text-white flex items-center gap-1.5">
+                            <i data-lucide="microscope" class="w-4 h-4 text-emerald-400"></i> Cell Diagnostic Breakdown
+                        </h3>
+                        <span class="text-xs px-2.5 py-0.5 rounded font-mono font-bold" id="cell-badge">True Positive</span>
+                    </div>
+                    <div class="space-y-2 text-xs">
+                        <div class="flex justify-between text-slate-300 py-1 border-b border-slate-800">
+                            <span>Actual Ground Truth:</span>
+                            <span class="font-mono font-bold text-slate-100" id="cell-actual">setosa</span>
+                        </div>
+                        <div class="flex justify-between text-slate-300 py-1 border-b border-slate-800">
+                            <span>Predicted Class:</span>
+                            <span class="font-mono font-bold text-cyan-300" id="cell-pred">setosa</span>
+                        </div>
+                        <div class="flex justify-between text-slate-300 py-1 border-b border-slate-800">
+                            <span>Sample Count (Rate):</span>
+                            <span class="font-mono font-bold text-emerald-400" id="cell-count">19 instances (100.0%)</span>
+                        </div>
+                        <div class="py-1 text-slate-400 leading-relaxed" id="cell-impact">
+                            Correct classification. No operational error incurred.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Per-Class Performance Breakdown -->
+                <div class="glass-panel p-5 rounded-2xl">
+                    <div class="flex justify-between items-center mb-2">
+                        <h3 class="text-sm font-bold text-white">📊 Per-Class Accuracy &amp; Recall</h3>
+                        <span class="text-[10px] text-slate-400">Class Performance</span>
+                    </div>
+                    <div class="h-56 relative">
+                        <canvas id="chart-perclass"></canvas>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-900 py-6 text-center text-xs text-slate-500">
+        1,000 AI Projects · Project 019 Confusion Matrix Visualization
+    </footer>
+
+    <!-- Interactive Logic Script -->
+    <script>
+        let currentTask = 'iris'; // 'iris' | 'binary'
+        let currentThreshold = 0.50;
+        let selectedCell = [0, 0];
+        let perClassChart = null;
+
+        // Baseline Iris dataset matrix matching Project 019
+        const irisLabels = ['setosa', 'versicolor', 'virginica'];
+        const irisMatrix = [
+            [19, 0, 0],
+            [0, 13, 0],
+            [0, 0, 13]
+        ];
+
+        // Binary medical dataset (simulated Breast Cancer with threshold response)
+        const binaryLabels = ['Benign', 'Malignant'];
+        function getBinaryMatrix(tau) {
+            // Realistic threshold reaction:
+            // High tau -> fewer predicted positive -> more FN, fewer FP
+            // Low tau -> more predicted positive -> fewer FN, more FP
+            const totalP = 42;
+            const totalN = 72;
+
+            const tp = Math.round(totalP * (1.0 - 0.4 * Math.pow(tau, 1.8)));
+            const fn = totalP - tp;
+            const fp = Math.round(totalN * 0.35 * Math.pow(1.0 - tau, 1.5));
+            const tn = totalN - fp;
+
+            return [
+                [tn, fp],
+                [fn, tp]
+            ];
+        }
+
+        function setTask(task) {
+            currentTask = task;
+            document.getElementById('btn-task-iris').className = task === 'iris' 
+                ? 'px-3 py-1 rounded-md font-medium transition bg-emerald-600 text-white shadow-sm'
+                : 'px-3 py-1 rounded-md font-medium transition text-slate-400 hover:text-white';
+            document.getElementById('btn-task-binary').className = task === 'binary' 
+                ? 'px-3 py-1 rounded-md font-medium transition bg-emerald-600 text-white shadow-sm'
+                : 'px-3 py-1 rounded-md font-medium transition text-slate-400 hover:text-white';
+
+            const binaryPanel = document.getElementById('binary-controls-panel');
+            if (task === 'binary') {
+                binaryPanel.classList.remove('hidden');
+            } else {
+                binaryPanel.classList.add('hidden');
+            }
+
+            selectedCell = [0, 0];
+            renderMatrix();
+        }
+
+        function updateThreshold(val) {
+            currentThreshold = parseFloat(val);
+            document.getElementById('lbl-thresh').textContent = `τ = ${currentThreshold.toFixed(2)}`;
+            renderMatrix();
+        }
+
+        function getActiveData() {
+            if (currentTask === 'iris') {
+                return { labels: irisLabels, matrix: irisMatrix };
+            } else {
+                return { labels: binaryLabels, matrix: getBinaryMatrix(currentThreshold) };
+            }
+        }
+
+        function renderMatrix() {
+            const { labels, matrix } = getActiveData();
+            const normMode = document.getElementById('sel-norm').value;
+            const n = labels.length;
+
+            // Calculate overall metrics
+            let total = 0, diagonal = 0;
+            for (let i = 0; i < n; i++) {
+                for (let j = 0; j < n; j++) {
+                    total += matrix[i][j];
+                    if (i === j) diagonal += matrix[i][j];
+                }
+            }
+
+            const accuracy = total > 0 ? (diagonal / total) : 0;
+            const errors = total - diagonal;
+
+            document.getElementById('kpi-accuracy').textContent = `${(accuracy * 100).toFixed(1)}%`;
+            document.getElementById('kpi-samples-count').textContent = `${diagonal} / ${total} Correct`;
+            document.getElementById('kpi-errors').textContent = `${errors} errors`;
+            document.getElementById('kpi-error-rate').textContent = `${((errors / total) * 100).toFixed(1)}% Error Rate`;
+
+            // Max value for color scaling
+            let maxVal = 0;
+            for (let i = 0; i < n; i++) {
+                for (let j = 0; j < n; j++) {
+                    if (matrix[i][j] > maxVal) maxVal = matrix[i][j];
+                }
+            }
+
+            // Build table HTML
+            const table = document.getElementById('cm-table');
+            let html = `<thead><tr class="border-b border-slate-800 text-slate-400"><th class="py-2.5 px-3 text-left">Actual \\ Predicted</th>`;
+            labels.forEach(l => {
+                html += `<th class="py-2.5 px-3 font-mono">${l}</th>`;
+            });
+            html += `</tr></thead><tbody>`;
+
+            for (let i = 0; i < n; i++) {
+                const rowSum = matrix[i].reduce((a, b) => a + b, 0);
+                html += `<tr class="border-b border-slate-800/60 hover:bg-slate-900/40 transition">
+                    <td class="py-2.5 px-3 text-left font-mono font-medium text-slate-300">${labels[i]}</td>`;
+
+                for (let j = 0; j < n; j++) {
+                    const count = matrix[i][j];
+                    const isSelected = (selectedCell[0] === i && selectedCell[1] === j);
+
+                    let displayVal = `${count}`;
+                    if (normMode === 'row') {
+                        const pct = rowSum > 0 ? (count / rowSum) * 100 : 0;
+                        displayVal = `${pct.toFixed(1)}%`;
+                    } else if (normMode === 'col') {
+                        let colSum = 0;
+                        for (let k = 0; k < n; k++) colSum += matrix[k][j];
+                        const pct = colSum > 0 ? (count / colSum) * 100 : 0;
+                        displayVal = `${pct.toFixed(1)}%`;
+                    }
+
+                    // Background color scaling
+                    const ratio = maxVal > 0 ? (count / maxVal) : 0;
+                    const isDiag = (i === j);
+                    let bg = "";
+                    if (count === 0) {
+                        bg = "rgba(15, 23, 42, 0.4)";
+                    } else if (isDiag) {
+                        bg = `rgba(16, 185, 129, ${0.2 + ratio * 0.7})`;
+                    } else {
+                        bg = `rgba(239, 68, 68, ${0.3 + ratio * 0.7})`;
+                    }
+
+                    const outline = isSelected ? "ring-2 ring-cyan-400 z-10" : "";
+
+                    html += `<td class="p-1.5">
+                        <div onclick="selectCell(${i}, ${j})" 
+                             class="cm-cell p-3 rounded-lg cursor-pointer transition text-xs font-mono font-bold ${outline}" 
+                             style="background-color: ${bg};">
+                            <div>${displayVal}</div>
+                            ${normMode !== 'raw' ? `<div class="text-[9px] text-slate-400 mt-0.5">N=${count}</div>` : ''}
+                        </div>
+                    </td>`;
+                }
+                html += `</tr>`;
+            }
+            html += `</tbody>`;
+            table.innerHTML = html;
+
+            renderCellDetails();
+            renderPerClassChart();
+        }
+
+        function selectCell(i, j) {
+            selectedCell = [i, j];
+            renderMatrix();
+        }
+
+        function renderCellDetails() {
+            const { labels, matrix } = getActiveData();
+            const i = selectedCell[0];
+            const j = selectedCell[1];
+            const actualName = labels[i];
+            const predName = labels[j];
+            const count = matrix[i][j];
+
+            let total = 0;
+            matrix.forEach(row => row.forEach(val => total += val));
+            const pct = total > 0 ? ((count / total) * 100).toFixed(1) : 0;
+
+            document.getElementById('cell-actual').textContent = actualName;
+            document.getElementById('cell-pred').textContent = predName;
+            document.getElementById('cell-count').textContent = `${count} instances (${pct}% of total)`;
+            document.getElementById('kpi-selected-label').textContent = `${actualName} ↔ ${predName}`;
+
+            const badge = document.getElementById('cell-badge');
+            const impact = document.getElementById('cell-impact');
+
+            if (currentTask === 'binary') {
+                if (i === 1 && j === 1) { // TP
+                    badge.textContent = "True Positive (TP)";
+                    badge.className = "text-xs px-2.5 py-0.5 rounded font-mono font-bold bg-emerald-950 text-emerald-300 border border-emerald-800";
+                    impact.textContent = "Accurately caught Malignant case. Critical clinical intervention enabled.";
+                    document.getElementById('kpi-selected-type').textContent = "True Positive";
+                } else if (i === 0 && j === 0) { // TN
+                    badge.textContent = "True Negative (TN)";
+                    badge.className = "text-xs px-2.5 py-0.5 rounded font-mono font-bold bg-cyan-950 text-cyan-300 border border-cyan-800";
+                    impact.textContent = "Accurately identified Benign condition. Prevents unnecessary invasive procedures.";
+                    document.getElementById('kpi-selected-type').textContent = "True Negative";
+                } else if (i === 0 && j === 1) { // FP
+                    badge.textContent = "False Positive (FP - Type I)";
+                    badge.className = "text-xs px-2.5 py-0.5 rounded font-mono font-bold bg-amber-950 text-amber-300 border border-amber-800";
+                    impact.textContent = "False alarm! Benign patient mistakenly classified as Malignant. Triggers biopsy anxiety.";
+                    document.getElementById('kpi-selected-type').textContent = "False Positive";
+                } else { // FN
+                    badge.textContent = "False Negative (FN - Type II)";
+                    badge.className = "text-xs px-2.5 py-0.5 rounded font-mono font-bold bg-rose-950 text-rose-300 border border-rose-800";
+                    impact.textContent = "Severe missed diagnosis! Malignant case went undetected. Highest clinical risk.";
+                    document.getElementById('kpi-selected-type').textContent = "False Negative";
+                }
+            } else {
+                if (i === j) {
+                    badge.textContent = "Correct Match";
+                    badge.className = "text-xs px-2.5 py-0.5 rounded font-mono font-bold bg-emerald-950 text-emerald-300 border border-emerald-800";
+                    impact.textContent = `Accurate classification of ${actualName}. Zero confusion error.`;
+                    document.getElementById('kpi-selected-type').textContent = "Correct";
+                } else {
+                    badge.textContent = "Confusion Error";
+                    badge.className = "text-xs px-2.5 py-0.5 rounded font-mono font-bold bg-rose-950 text-rose-300 border border-rose-800";
+                    impact.textContent = `Misclassification error: True ${actualName} confused with ${predName}.`;
+                    document.getElementById('kpi-selected-type').textContent = "Confusion Error";
+                }
+            }
+        }
+
+        function renderPerClassChart() {
+            const { labels, matrix } = getActiveData();
+            const n = labels.length;
+            const recalls = [];
+
+            for (let i = 0; i < n; i++) {
+                const rowSum = matrix[i].reduce((a, b) => a + b, 0);
+                const rec = rowSum > 0 ? (matrix[i][i] / rowSum) * 100 : 0;
+                recalls.push(rec.toFixed(1));
+            }
+
+            const ctx = document.getElementById('chart-perclass').getContext('2d');
+            if (perClassChart) perClassChart.destroy();
+
+            perClassChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Per-Class Recall (%)',
+                            data: recalls,
+                            backgroundColor: ['#10b981', '#06b6d4', '#8b5cf6'],
+                            borderRadius: 6
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            min: 0,
+                            max: 105,
+                            ticks: { color: '#64748b', font: { size: 10 } },
+                            grid: { color: 'rgba(255,255,255,0.04)' }
+                        },
+                        x: {
+                            ticks: { color: '#94a3b8', font: { size: 11 } },
+                            grid: { display: false }
+                        }
+                    }
+                }
+            });
+        }
+
+        function resetMatrix() {
+            currentThreshold = 0.50;
+            document.getElementById('inp-thresh').value = 0.50;
+            document.getElementById('lbl-thresh').textContent = "τ = 0.50";
+            selectedCell = [0, 0];
+            renderMatrix();
+        }
+
+        window.onload = function() {
+            lucide.createIcons();
+            renderMatrix();
+        };
+    </script>
+</body>
+</html>
