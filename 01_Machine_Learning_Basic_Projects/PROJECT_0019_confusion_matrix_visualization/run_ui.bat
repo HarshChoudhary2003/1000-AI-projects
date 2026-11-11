@@ -8,3 +8,4 @@ echo Starting Streamlit Confusion Matrix Diagnostic Studio...
 echo.
 streamlit run app.py
 pause
+

@@ -446,3 +446,4 @@ with tab_custom:
         )
         fig_custom_cm.update_layout(paper_bgcolor="#0b0f19", height=240, margin=dict(l=0, r=0, t=10, b=10))
         st.plotly_chart(fig_custom_cm, use_container_width=True)
+
